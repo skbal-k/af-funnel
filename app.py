@@ -605,6 +605,57 @@ with tab3:
     else:
         st.info("No LACA data yet. Click **Refresh LACA**.")
 
+    # ── Scale Accounts ────────────────────────────────────────────────────
+    _scale_tbl_csv = AGENT1_OUTPUT / "laca_scale_accounts.csv"
+    if _scale_tbl_csv.exists():
+        try:
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown('<div class="section-title">⚡ Scale Accounts — 100K+ Actions/Week</div>', unsafe_allow_html=True)
+            _sdf = pd.read_csv(_scale_tbl_csv, encoding="utf-8", on_bad_lines="skip")
+            _sdf = _sdf.rename(columns={"Unnamed: 12": "Impl Partner"})
+            _sdf = _sdf[_sdf["OU"].str.contains("LATAM", na=False)].copy()
+            _sdf["Impl Partner"] = _sdf["Impl Partner"].fillna("Direct")
+
+            def _region(ou2):
+                ou2 = str(ou2)
+                if "- BR -" in ou2 or "PS - BR" in ou2: return "🇧🇷 Brazil"
+                if "- MX -" in ou2: return "🇲🇽 Mexico"
+                if "- GRW -" in ou2: return "📈 Growth"
+                if "- EMG -" in ou2 or "EMERG" in ou2: return "🌱 Emerging"
+                return "🌎 LATAM"
+
+            _sdf["Region"] = _sdf["OU+2"].apply(_region)
+
+            def _fmt_awu(v):
+                try:
+                    n = int(str(v).replace(",",""))
+                    if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
+                    if n >= 1_000: return f"{n/1_000:.0f}K"
+                    return str(n)
+                except: return str(v)
+
+            _sdf["AWUs"] = _sdf["Agent AWUs - Week Ending May 9"].apply(_fmt_awu)
+            _sdf = _sdf.sort_values("Agent AWUs - Week Ending May 9",
+                key=lambda x: x.apply(lambda v: int(str(v).replace(",","")) if str(v).replace(",","").isdigit() else 0),
+                ascending=False)
+
+            _scale_hdr = "<table class='funnel-table'><thead><tr><th>Account</th><th>Region</th><th>Impl Partner</th><th>AWUs</th></tr></thead><tbody>"
+            _scale_rows = ""
+            for _, row in _sdf.iterrows():
+                partner = row["Impl Partner"]
+                partner_html = f"<span style='color:#C0504D;font-weight:700'>{partner}</span>" if partner != "Direct" else "<span style='color:#aaa'>Direct</span>"
+                _scale_rows += (
+                    f"<tr>"
+                    f"<td style='text-align:left;font-weight:600'>{row['Account Name']}</td>"
+                    f"<td>{row['Region']}</td>"
+                    f"<td>{partner_html}</td>"
+                    f"<td><span style='color:#C0504D;font-weight:700'>{row['AWUs']}</span></td>"
+                    f"</tr>"
+                )
+            st.markdown(_scale_hdr + _scale_rows + "</tbody></table>", unsafe_allow_html=True)
+        except Exception as e:
+            st.error(f"Error loading scale accounts: {e}")
+
     # ── Funnel Chart image ─────────────────────────────────────────────────
     laca_img = OUTPUT / "laca_funnel.png"
     if laca_img.exists():
