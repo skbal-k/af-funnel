@@ -556,14 +556,13 @@ with tab3:
         st.info("No LACA data yet. Click **Refresh LACA**.")
 
     # ── Funnel Chart image ─────────────────────────────────────────────────
-    laca_img = OUTPUT / "latam_funnel.png"
+    laca_img = OUTPUT / "laca_funnel.png"
     if laca_img.exists():
         st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown('<div class="section-title">Funnel Chart</div>', unsafe_allow_html=True)
         col_img, col_dl = st.columns([5, 1])
         with col_img:
             st.image(str(laca_img), use_container_width=True)
         with col_dl:
             st.markdown("<br><br><br>", unsafe_allow_html=True)
             with open(laca_img, "rb") as f:
-                st.download_button("⬇️  Download PNG", f, file_name="latam_funnel.png", mime="image/png", key="dl_laca_overview")
+                st.download_button("⬇️  Download PNG", f, file_name="laca_funnel.png", mime="image/png", key="dl_laca_overview")
