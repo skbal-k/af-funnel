@@ -35,6 +35,7 @@ if not st.session_state["authenticated"]:
 
 BASE   = Path(__file__).parent
 OUTPUT = BASE / "output"
+is_admin = st.session_state.get("user_email", "") == "skbal@salesforce.com"
 
 st.markdown("""
 <style>
@@ -255,7 +256,7 @@ with col_f1:
 
 with col_f3:
     st.markdown("<br>", unsafe_allow_html=True)
-    refresh = st.button("🔄  Refresh from Tableau")
+    refresh = st.button("🔄  Refresh from Tableau") if is_admin else False
 
 with col_f4:
     cfg = REGIONS[selected]
@@ -421,7 +422,7 @@ with tab3:
 
     col_a1, col_a2 = st.columns([1, 5])
     with col_a1:
-        refresh_laca = st.button("🔄  Refresh LACA")
+        refresh_laca = st.button("🔄  Refresh LACA") if is_admin else False
 
     with col_a2:
         if laca_json.exists():
