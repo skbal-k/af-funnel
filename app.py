@@ -566,4 +566,4 @@ with tab3:
         with col_dl:
             st.markdown("<br><br><br>", unsafe_allow_html=True)
             with open(laca_img, "rb") as f:
-                st.download_button("⬇️  Download PNG", f, file_name="latam_funnel.png", mime="image/png")
+                st.download_button("⬇️  Download PNG", f, file_name="latam_funnel.png", mime="image/png", key="dl_laca_overview")
