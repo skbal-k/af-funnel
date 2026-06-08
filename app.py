@@ -431,12 +431,10 @@ with tab3:
         refresh_laca = st.button("🔄  Refresh LACA") if is_admin else False
 
     with col_a2:
-        if laca_json.exists():
-            import json as _json
-            with open(laca_json) as f:
-                meta = _json.load(f)
-            updated = meta.get("updated_at", "")[:16].replace("T", " ")
-            st.markdown(f"<span style='font-size:0.78rem;color:#aaa'>Last updated: {updated}</span>", unsafe_allow_html=True)
+        laca_csv = AGENT1_OUTPUT / "laca_raw_data.csv"
+        if laca_csv.exists():
+            mtime_laca = datetime.fromtimestamp(laca_csv.stat().st_mtime)
+            st.markdown(f"<span style='font-size:0.78rem;color:#aaa'>Last updated: {mtime_laca.strftime('%Y-%m-%d %H:%M')}</span>", unsafe_allow_html=True)
 
     if refresh_laca:
         with st.spinner("Regenerating LACA funnel..."):
