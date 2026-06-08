@@ -1,0 +1,33 @@
+# Credenciales y tokens — NUNCA subir
+.env
+gas_token.json
+*.session_cookies.json
+*.google_cookies.json
+.google_cookies.json
+.session_cookies.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# macOS
+.DS_Store
+
+# Debug screenshots (no hacen falta en el repo)
+output/debug_*.png
+output/before_download.png
+
+# Logs
+*.log
+cron.log
+agent.log
+
+# Excel (el CSV es suficiente)
+output/*.xlsx
+output/*.tsv

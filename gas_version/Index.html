@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AF Implementation Funnel</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: #f4f7fb; }
+
+.top-bar {
+  background: #1a2e4a;
+  padding: 18px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.top-bar-title { color: white; font-size: 1.3rem; font-weight: 800; }
+.top-bar-sub   { color: #8eaecf; font-size: 0.8rem; margin-top: 2px; }
+
+.filter-bar {
+  background: white;
+  padding: 14px 32px;
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+}
+.filter-group { display: flex; flex-direction: column; gap: 4px; }
+.filter-label { font-size: 0.73rem; font-weight: 700; color: #8899aa; text-transform: uppercase; letter-spacing: 0.6px; }
+select {
+  padding: 8px 14px;
+  border: 1.5px solid #d0dce8;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1a2e4a;
+  background: white;
+  cursor: pointer;
+  min-width: 180px;
+  outline: none;
+}
+select:focus { border-color: #2E75B6; }
+
+.btn {
+  padding: 9px 22px;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.btn-primary {
+  background: linear-gradient(135deg, #1a2e4a 0%, #2E75B6 100%);
+  color: white;
+  box-shadow: 0 3px 10px rgba(26,46,74,0.25);
+}
+.btn-primary:hover { opacity: 0.85; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.content { padding: 28px 32px; }
+
+/* KPI cards */
+.kpi-row { display: flex; gap: 16px; margin-bottom: 28px; }
+.kpi-card {
+  flex: 1;
+  background: white;
+  border-radius: 14px;
+  padding: 20px 24px;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.07);
+  border-top: 4px solid var(--c);
+  text-align: center;
+}
+.kpi-value { font-size: 2.4rem; font-weight: 800; color: var(--c); line-height: 1; }
+.kpi-label { font-size: 0.72rem; font-weight: 700; color: #8899aa; text-transform: uppercase; letter-spacing: 0.8px; margin-top: 4px; }
+
+/* Table */
+.table-wrap {
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.07);
+  overflow-x: auto;
+}
+.section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a2e4a;
+  padding: 18px 20px 10px;
+  border-bottom: 2px solid #e8f0f8;
+}
+table { width: 100%; border-collapse: collapse; }
+thead tr { background: #1a2e4a; }
+th {
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 12px 14px;
+  text-align: center;
+  white-space: nowrap;
+}
+th:first-child { text-align: left; min-width: 140px; }
+td {
+  padding: 12px 14px;
+  text-align: center;
+  font-size: 0.92rem;
+  border-bottom: 1px solid #f0f4f8;
+}
+td:first-child {
+  text-align: left;
+  font-weight: 700;
+  color: #1a2e4a;
+}
+tr:last-child td { border-bottom: none; }
+tr:nth-child(even) td { background: #fafcff; }
+tr:hover td { background: #eef4fb; }
+
+.stage-dot {
+  display: inline-block;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.val-pos { font-weight: 700; }
+.val-zero { color: #ccc; }
+
+.updated { font-size: 0.72rem; color: #aaa; padding: 12px 20px; }
+
+/* Spinner */
+.spinner-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(255,255,255,0.7);
+  z-index: 999;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 14px;
+}
+.spinner-overlay.active { display: flex; }
+.spinner {
+  width: 44px; height: 44px;
+  border: 4px solid #d0dce8;
+  border-top-color: #2E75B6;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner-text { color: #1a2e4a; font-weight: 700; font-size: 0.95rem; }
+
+.error-msg {
+  background: #fff0f0;
+  border: 1px solid #f5c6c6;
+  border-radius: 10px;
+  padding: 16px 20px;
+  color: #c0392b;
+  font-size: 0.9rem;
+  margin: 20px 0;
+}
+</style>
+</head>
+<body>
+
+<!-- Spinner -->
+<div class="spinner-overlay" id="spinner">
+  <div class="spinner"></div>
+  <div class="spinner-text">Loading data...</div>
+</div>
+
+<!-- Top bar -->
+<div class="top-bar">
+  <div>
+    <div class="top-bar-title">⚡ AF Implementation Funnel</div>
+    <div class="top-bar-sub">Agentforce Cumulative Go-Live · LATAM Partner Team</div>
+  </div>
+</div>
+
+<!-- Filter bar -->
+<div class="filter-bar">
+  <div class="filter-group">
+    <div class="filter-label">Sub Sub Region</div>
+    <select id="regionSelect"></select>
+  </div>
+  <button class="btn btn-primary" id="loadBtn" onclick="loadData()">🔄 Load Data</button>
+</div>
+
+<!-- Content -->
+<div class="content">
+  <div id="errorMsg" class="error-msg" style="display:none"></div>
+
+  <!-- KPIs -->
+  <div class="kpi-row" id="kpiRow" style="display:none">
+    <div class="kpi-card" style="--c:#1a2e4a"><div class="kpi-value" id="kpi-partners">–</div><div class="kpi-label">Partners</div></div>
+    <div class="kpi-card" style="--c:#4472C4"><div class="kpi-value" id="kpi-prov">–</div><div class="kpi-label">Provisioned</div></div>
+    <div class="kpi-card" style="--c:#375623"><div class="kpi-value" id="kpi-activ">–</div><div class="kpi-label">Agent in Prod</div></div>
+    <div class="kpi-card" style="--c:#808080"><div class="kpi-value" id="kpi-used">–</div><div class="kpi-label">Used</div></div>
+    <div class="kpi-card" style="--c:#9C7A00"><div class="kpi-value" id="kpi-cons">–</div><div class="kpi-label">Consumed 50+</div></div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap" id="tableWrap" style="display:none">
+    <div class="section-title">Funnel by Implementation Partner</div>
+    <div id="tableContainer"></div>
+    <div class="updated" id="updatedAt"></div>
+  </div>
+</div>
+
+<script>
+var STAGE_COLORS = {
+  "Provisioned":   "#4472C4",
+  "Discovery":     "#2E75B6",
+  "Agent Created": "#7030A0",
+  "Agent in Prod": "#375623",
+  "Used":          "#808080",
+  "Consumed 50+":  "#9C7A00",
+  "Scale":         "#C0504D"
+};
+
+function shortName(name) {
+  return name
+    .replace(/ TECNOLOGIA LTDA dba EVERYMIND/gi, "")
+    .replace(/ TECNOLOGIA LTDA/gi, "")
+    .replace(/ LLC/gi, "").replace(/ LTDA/gi, "").replace(/ S\.A\./gi, "")
+    .trim()
+    .substring(0, 18);
+}
+
+function fmt(n) {
+  return n > 0 ? n.toLocaleString() : "–";
+}
+
+// Load region options
+google.script.run.withSuccessHandler(function(regions) {
+  var sel = document.getElementById("regionSelect");
+  regions.forEach(function(r) {
+    var opt = document.createElement("option");
+    opt.value = r; opt.textContent = r;
+    sel.appendChild(opt);
+  });
+  loadData();
+}).getRegions();
+
+function loadData() {
+  var region = document.getElementById("regionSelect").value;
+  if (!region) return;
+  document.getElementById("spinner").classList.add("active");
+  document.getElementById("loadBtn").disabled = true;
+  document.getElementById("errorMsg").style.display = "none";
+  document.getElementById("kpiRow").style.display = "none";
+  document.getElementById("tableWrap").style.display = "none";
+
+  google.script.run
+    .withSuccessHandler(renderData)
+    .withFailureHandler(function(err) {
+      document.getElementById("spinner").classList.remove("active");
+      document.getElementById("loadBtn").disabled = false;
+      showError(err.message || String(err));
+    })
+    .getFunnelData(region);
+}
+
+function showError(msg) {
+  var el = document.getElementById("errorMsg");
+  el.textContent = "❌ " + msg;
+  el.style.display = "block";
+}
+
+function renderData(result) {
+  document.getElementById("spinner").classList.remove("active");
+  document.getElementById("loadBtn").disabled = false;
+
+  if (result.error) { showError(result.error); return; }
+
+  var partners = result.partners;
+  var stages   = result.stages;
+
+  // KPIs
+  var totProv  = partners.reduce(function(s,p){ return s + (p["Provisioned"]||0); }, 0);
+  var totActiv = partners.reduce(function(s,p){ return s + (p["Agent in Prod"]||0); }, 0);
+  var totUsed  = partners.reduce(function(s,p){ return s + (p["Used"]||0); }, 0);
+  var totCons  = partners.reduce(function(s,p){ return s + (p["Consumed 50+"]||0); }, 0);
+
+  document.getElementById("kpi-partners").textContent = partners.length;
+  document.getElementById("kpi-prov").textContent     = totProv.toLocaleString();
+  document.getElementById("kpi-activ").textContent    = totActiv.toLocaleString();
+  document.getElementById("kpi-used").textContent     = totUsed.toLocaleString();
+  document.getElementById("kpi-cons").textContent     = totCons.toLocaleString();
+  document.getElementById("kpiRow").style.display     = "flex";
+
+  // Table
+  var html = "<table><thead><tr><th>Stage</th>";
+  partners.forEach(function(p) { html += "<th>" + shortName(p.name) + "</th>"; });
+  html += "<th>Total</th></tr></thead><tbody>";
+
+  stages.forEach(function(stage) {
+    var color = STAGE_COLORS[stage] || "#999";
+    html += "<tr><td><span class='stage-dot' style='background:" + color + "'></span>" + stage + "</td>";
+    var total = 0;
+    partners.forEach(function(p) {
+      var val = p[stage] || 0;
+      total += val;
+      if (val > 0) {
+        html += "<td class='val-pos' style='color:" + color + "'>" + val.toLocaleString() + "</td>";
+      } else {
+        html += "<td class='val-zero'>–</td>";
+      }
+    });
+    html += "<td><b style='color:" + color + "'>" + total.toLocaleString() + "</b></td></tr>";
+  });
+
+  html += "</tbody></table>";
+  document.getElementById("tableContainer").innerHTML = html;
+
+  var now = new Date();
+  document.getElementById("updatedAt").textContent =
+    "Last loaded: " + now.toLocaleDateString() + " " + now.toLocaleTimeString();
+
+  document.getElementById("tableWrap").style.display = "block";
+}
+</script>
+</body>
+</html>

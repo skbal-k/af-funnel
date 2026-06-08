@@ -1,0 +1,127 @@
+var SPREADSHEET_ID = "1M5hPXCwHphDVUF7sMTnrUAUT0h8lxDppB4YlYUmPXQs";
+
+var REGIONS = {
+  "LACA (All)":      { sheetTab: "LACA",           scaleFilter: "LATAM"    },
+  "Brazil":          { sheetTab: "BRAZIL",          scaleFilter: "BRAZIL"   },
+  "Mexico":          { sheetTab: "MEXICO",          scaleFilter: "MEXICO"   },
+  "LATAM-Growth":    { sheetTab: "LATAM-GROWTH",    scaleFilter: "GROWTH"   },
+  "LATAM-Emerging":  { sheetTab: "LATAM-EMERGING",  scaleFilter: "EMERG"    }
+};
+
+var STAGES = ["Provisioned", "Discovery", "Agent Created", "Agent in Prod", "Used", "Consumed 50+", "Scale"];
+
+function doGet(e) {
+  if (e && e.parameter && e.parameter.action === "syncData") {
+    return ContentService.createTextOutput(JSON.stringify({error: "Use POST for sync"}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  return HtmlService.createTemplateFromFile("Index")
+    .evaluate()
+    .setTitle("AF Implementation Funnel")
+    .addMetaTag("viewport", "width=device-width, initial-scale=1")
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+function doPost(e) {
+  try {
+    var payload = JSON.parse(e.postData.contents);
+    if (payload.action === "syncData") {
+      var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+      var data = payload.data;
+      for (var tabName in data) {
+        var rows = data[tabName];
+        var sheet = ss.getSheetByName(tabName);
+        if (!sheet) {
+          sheet = ss.insertSheet(tabName);
+        } else {
+          sheet.clearContents();
+        }
+        if (rows.length > 0) {
+          sheet.getRange(1, 1, rows.length, rows[0].length).setValues(rows);
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({ok: true, msg: "Sync OK: " + Object.keys(data).join(", ")}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    return ContentService.createTextOutput(JSON.stringify({error: "Unknown action"}))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({error: err.message}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function getFunnelData(regionName) {
+  var cfg = REGIONS[regionName];
+  if (!cfg) return { error: "Region not found: " + regionName };
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = ss.getSheetByName(cfg.sheetTab);
+    if (!sheet) return { error: "No hay datos para '" + regionName + "'. Corré sync_to_sheets.py primero." };
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var colIdx = {};
+    var stageMap = {
+      "Provisioned":   ["provisioned"],
+      "Discovery":     ["discovery"],
+      "Agent Created": ["agent created", "created"],
+      "Agent in Prod": ["agent in prod", "activated"],
+      "Used":          ["used"],
+      "Consumed 50+":  ["consumed 50+", "consumed"],
+    };
+    for (var s in stageMap) {
+      colIdx[s] = -1;
+      for (var h = 0; h < headers.length; h++) {
+        var hLower = String(headers[h]).toLowerCase().trim();
+        for (var k = 0; k < stageMap[s].length; k++) {
+          if (hLower.indexOf(stageMap[s][k]) >= 0) { colIdx[s] = h; break; }
+        }
+        if (colIdx[s] >= 0) break;
+      }
+    }
+    var partners = [];
+    for (var r = 1; r < data.length; r++) {
+      var row = data[r];
+      var partner = String(row[0] || "").trim();
+      if (!partner || partner.toLowerCase() === "no partner" || partner.toLowerCase() === "total") continue;
+      var entry = { name: partner };
+      for (var st in colIdx) {
+        var ci = colIdx[st];
+        entry[st] = (ci >= 0) ? (parseInt(row[ci]) || 0) : 0;
+      }
+      partners.push(entry);
+    }
+    partners.sort(function(a, b) { return b["Provisioned"] - a["Provisioned"]; });
+    partners = partners.slice(0, 11);
+
+    var scaleSheet = ss.getSheetByName("Scale Clients");
+    var scaleCounts = {};
+    if (scaleSheet) {
+      var scaleData = scaleSheet.getDataRange().getValues();
+      for (var sr = 1; sr < scaleData.length; sr++) {
+        var sRow = scaleData[sr];
+        var implPartner = String(sRow[12] || "").trim();
+        var subRegion = String(sRow[13] || "").toUpperCase();
+        if (!implPartner || implPartner.toLowerCase() === "no partner") continue;
+        if (subRegion.indexOf(cfg.scaleFilter.toUpperCase()) < 0) continue;
+        scaleCounts[implPartner] = (scaleCounts[implPartner] || 0) + 1;
+      }
+    }
+    for (var p = 0; p < partners.length; p++) {
+      var pName = partners[p].name.toUpperCase();
+      var scaleVal = 0;
+      for (var sk in scaleCounts) {
+        var skUp = sk.toUpperCase();
+        if (pName.indexOf(skUp) >= 0 || skUp.indexOf(pName) >= 0) { scaleVal = scaleCounts[sk]; break; }
+      }
+      partners[p]["Scale"] = scaleVal;
+    }
+    return { partners: partners, stages: STAGES, region: regionName };
+  } catch(e) {
+    return { error: e.message };
+  }
+}
+
+function getRegions() {
+  return Object.keys(REGIONS);
+}
