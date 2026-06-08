@@ -329,7 +329,7 @@ for col, (label, val, color) in zip(kpi_cols, kpis):
 st.markdown("<br>", unsafe_allow_html=True)
 
 # ── Tabla interactiva ─────────────────────────────────────────────────────────
-AGENT1_OUTPUT = Path("/Users/skbal/claude/tableau_agent/outputs")
+AGENT1_OUTPUT = BASE / "output"
 AGENT1_SCRIPT = Path("/Users/skbal/claude/tableau_agent/agent.py")
 
 tab1, tab2, tab3 = st.tabs(["📊  Funnel Table", "🖼️  Funnel Chart", "🌎  LACA Overview"])
@@ -418,7 +418,7 @@ with tab2:
 with tab3:
     st.markdown('<div class="section-title">LACA Agentforce Funnel — All Accounts (excl. ESMB)</div>', unsafe_allow_html=True)
 
-    laca_json = AGENT1_OUTPUT / "latest.json"
+    laca_json = AGENT1_OUTPUT / "laca_latest.json"
 
     col_a1, col_a2 = st.columns([1, 5])
     with col_a1:
@@ -435,9 +435,9 @@ with tab3:
     if refresh_laca:
         with st.spinner("Regenerating LACA funnel..."):
             csv_candidates = [
-                AGENT1_OUTPUT / "raw_data.csv",
-                AGENT1_OUTPUT / "impl_summary_latam.csv",
-                AGENT1_OUTPUT / "impl_summary.csv",
+                AGENT1_OUTPUT / "laca_raw_data.csv",
+                AGENT1_OUTPUT / "laca_raw_data.csv",
+                AGENT1_OUTPUT / "laca_raw_data.csv",
             ]
             csv_found = next((str(p) for p in csv_candidates if p.exists()), None)
             if csv_found:
@@ -463,9 +463,9 @@ with tab3:
     _sys.path.insert(0, str(AGENT1_OUTPUT.parent))
 
     _csv_candidates = [
-        AGENT1_OUTPUT / "raw_data.csv",
-        AGENT1_OUTPUT / "impl_summary_latam.csv",
-        AGENT1_OUTPUT / "impl_summary.csv",
+        AGENT1_OUTPUT / "laca_raw_data.csv",
+        AGENT1_OUTPUT / "laca_raw_data.csv",
+        AGENT1_OUTPUT / "laca_raw_data.csv",
     ]
     _csv_path = next((p for p in _csv_candidates if p.exists()), None)
 
@@ -477,7 +477,7 @@ with tab3:
             _metrics = _compute_metrics(_rows)
 
             # Load scale IDs if available
-            _scale_csv = AGENT1_OUTPUT / "scale_accounts.csv"
+            _scale_csv = AGENT1_OUTPUT / "laca_scale_accounts.csv"
             _scale_ids = []
             if _scale_csv.exists():
                 _sdf = pd.read_csv(_scale_csv, encoding="utf-8", on_bad_lines="skip")
