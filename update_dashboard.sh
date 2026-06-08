@@ -47,6 +47,9 @@ if [ -d "$LACA_SRC" ]; then
     [ -f "$LACA_SRC/raw_data.csv" ]        && cp "$LACA_SRC/raw_data.csv"        "$DIR/output/laca_raw_data.csv"
     [ -f "$LACA_SRC/scale_accounts.csv" ]  && cp "$LACA_SRC/scale_accounts.csv"  "$DIR/output/laca_scale_accounts.csv"
     [ -f "$LACA_SRC/latest.json" ]         && cp "$LACA_SRC/latest.json"         "$DIR/output/laca_latest.json"
+    # Copiar la imagen del funnel más reciente
+    LATEST_IMG=$(ls -t "$LACA_SRC"/af_funnel_*.png 2>/dev/null | head -1)
+    [ -n "$LATEST_IMG" ] && cp "$LATEST_IMG" "$DIR/output/laca_funnel.png"
     echo -e "${GREEN}✅ LACA Overview OK${NC}"
 else
     echo -e "${RED}❌ Carpeta tableau_agent no encontrada, saltando LACA Overview...${NC}"
