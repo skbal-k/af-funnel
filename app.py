@@ -332,7 +332,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 AGENT1_OUTPUT = BASE / "output"
 AGENT1_SCRIPT = Path("/Users/skbal/claude/tableau_agent/agent.py")
 
-tab1, tab2, tab3 = st.tabs(["📊  Funnel Table", "🖼️  Funnel Chart", "🌎  LACA Overview"])
+tab1, tab3 = st.tabs(["📊  Funnel Table", "🌎  LACA Overview"])
 
 with tab1:
     st.markdown('<div class="section-title">Funnel by Implementation Partner</div>', unsafe_allow_html=True)
@@ -409,11 +409,17 @@ with tab1:
         st.markdown(f"<br><span style='font-size:0.72rem;color:#aaa'>Last updated: {mtime.strftime('%Y-%m-%d %H:%M')}</span>",
                     unsafe_allow_html=True)
 
-with tab2:
+    # ── Funnel Chart debajo de la tabla ──────────────────────────────────────
     if img_path.exists():
-        st.image(str(img_path), use_container_width=True)
-    else:
-        st.info("No chart yet. Click **Refresh from Tableau**.")
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown('<div class="section-title">Funnel Chart</div>', unsafe_allow_html=True)
+        col_chart, col_dl_chart = st.columns([5, 1])
+        with col_chart:
+            st.image(str(img_path), use_container_width=True)
+        with col_dl_chart:
+            st.markdown("<br><br><br>", unsafe_allow_html=True)
+            with open(img_path, "rb") as f:
+                st.download_button("⬇️  Download PNG", f, file_name=cfg["img"], mime="image/png", key="dl_funnel_chart")
 
 with tab3:
     st.markdown('<div class="section-title">LACA Agentforce Funnel — All Accounts (excl. ESMB)</div>', unsafe_allow_html=True)
