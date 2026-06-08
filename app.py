@@ -82,7 +82,7 @@ html, body, [class*="css"] {{
 .stTabs [aria-selected="true"] {{ color: {_text} !important; }}
 
 /* Top bar */
-.top-bar {
+.top-bar {{
     background: #1a2e4a;
     border-radius: 12px;
     padding: 18px 28px;
@@ -90,19 +90,19 @@ html, body, [class*="css"] {{
     align-items: center;
     gap: 16px;
     margin-bottom: 24px;
-}
-.top-bar-title {
+}}
+.top-bar-title {{
     color: white;
     font-size: 1.35rem;
     font-weight: 800;
     letter-spacing: -0.3px;
     margin: 0;
-}
-.top-bar-sub {
+}}
+.top-bar-sub {{
     color: #8eaecf;
     font-size: 0.82rem;
     margin: 0;
-}
+}}
 
 /* KPI cards */
 .kpi-card {{
@@ -172,7 +172,7 @@ html, body, [class*="css"] {{
 .section-title {{ color: {_text}; border-bottom-color: {_border}; }}
 
 /* Stage badges */
-.stage-badge {
+.stage-badge {{
     display: inline-block;
     padding: 4px 10px;
     border-radius: 20px;
@@ -180,10 +180,10 @@ html, body, [class*="css"] {{
     font-weight: 700;
     color: white;
     margin-right: 8px;
-}
+}}
 
 /* Refresh button */
-div[data-testid="stButton"] > button {
+div[data-testid="stButton"] > button {{
     background: linear-gradient(135deg, #1a2e4a 0%, #2E75B6 100%);
     color: white !important;
     border: none;
@@ -193,34 +193,34 @@ div[data-testid="stButton"] > button {
     font-weight: 700;
     transition: opacity 0.2s;
     box-shadow: 0 3px 10px rgba(26,46,74,0.25);
-}
-div[data-testid="stButton"] > button:hover { opacity: 0.85; }
+}}
+div[data-testid="stButton"] > button:hover {{ opacity: 0.85; }}
 
 /* Download button */
-div[data-testid="stDownloadButton"] > button {
-    background: white;
-    color: #1a2e4a !important;
-    border: 2px solid #1a2e4a !important;
+div[data-testid="stDownloadButton"] > button {{
+    background: {_card_bg};
+    color: {_text} !important;
+    border: 2px solid {_text} !important;
     border-radius: 8px;
     font-weight: 700;
-}
+}}
 
 /* Selectbox */
-div[data-baseweb="select"] > div {
+div[data-baseweb="select"] > div {{
     border-radius: 8px !important;
-    border-color: #d0dce8 !important;
-    background: white !important;
-}
+    border-color: {_input_bdr} !important;
+    background: {_input_bg} !important;
+}}
 
 /* Section title */
-.section-title {
+.section-title {{
     font-size: 1rem;
     font-weight: 700;
-    color: #1a2e4a;
+    color: {_text};
     margin-bottom: 12px;
     padding-bottom: 6px;
-    border-bottom: 2px solid #e8f0f8;
-}
+    border-bottom: 2px solid {_border};
+}}
 </style>
 """, unsafe_allow_html=True)
 
