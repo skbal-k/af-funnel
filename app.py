@@ -249,7 +249,7 @@ st.markdown("""
 # ── Filter bar ────────────────────────────────────────────────────────────────
 top_n = 11
 
-col_f1, col_f3, col_f4 = st.columns([3, 1, 1])
+col_f1, col_f3 = st.columns([3, 1])
 
 with col_f1:
     selected = st.selectbox("Sub Sub Region", list(REGIONS.keys()), label_visibility="visible")
@@ -258,13 +258,8 @@ with col_f3:
     st.markdown("<br>", unsafe_allow_html=True)
     refresh = st.button("🔄  Refresh from Tableau") if is_admin else False
 
-with col_f4:
-    cfg = REGIONS[selected]
-    img_path = OUTPUT / cfg["img"]
-    if img_path.exists():
-        st.markdown("<br>", unsafe_allow_html=True)
-        with open(img_path, "rb") as f:
-            st.download_button("⬇️  Download PNG", f, file_name=cfg["img"], mime="image/png")
+cfg = REGIONS[selected]
+img_path = OUTPUT / cfg["img"]
 
 # ── Refresh ───────────────────────────────────────────────────────────────────
 if refresh:
