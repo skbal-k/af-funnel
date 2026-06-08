@@ -612,9 +612,21 @@ with tab3:
             st.markdown("<br>", unsafe_allow_html=True)
             st.markdown('<div class="section-title">⚡ Scale Accounts — 100K+ Actions/Week</div>', unsafe_allow_html=True)
             _sdf = pd.read_csv(_scale_tbl_csv, encoding="utf-8", on_bad_lines="skip")
-            _sdf = _sdf.rename(columns={"Unnamed: 12": "Impl Partner"})
             _sdf = _sdf[_sdf["OU"].str.contains("LATAM", na=False)].copy()
-            _sdf["Impl Partner"] = _sdf["Impl Partner"].fillna("Direct")
+            # Cruzar con scale_clients.csv para traer el partner real
+            _sc_csv = AGENT1_OUTPUT / "scale_clients.csv"
+            if _sc_csv.exists():
+                _sc = pd.read_csv(_sc_csv, encoding="utf-8", on_bad_lines="skip")
+                _sc = _sc.rename(columns={"Unnamed: 12": "Impl Partner"})
+                _sc_p = _sc[["ACCT_ID_18","Impl Partner"]].dropna(subset=["Impl Partner"])
+                _sdf = _sdf.merge(_sc_p, on="ACCT_ID_18", how="left")
+            else:
+                _sdf["Impl Partner"] = _sdf.get("Unnamed: 12", pd.Series(dtype=str))
+            # Limpiar nombre del partner
+            def _clean_partner(p):
+                if pd.isna(p): return "Direct"
+                return str(p).replace(" TECNOLOGIA LTDA dba EVERYMIND","").replace(" TECNOLOGIA LTDA","").replace(" LLC","").replace(" LTDA","").strip()
+            _sdf["Impl Partner"] = _sdf["Impl Partner"].apply(_clean_partner)
 
             def _region(ou2):
                 ou2 = str(ou2)
