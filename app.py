@@ -355,7 +355,6 @@ with tab1:
     scale_counts = {}
     try:
         import json
-        from playwright.sync_api import sync_playwright
         scale_csv = OUTPUT / "scale_clients.csv"
         if scale_csv.exists():
             sdf = pd.read_csv(scale_csv, encoding="utf-8", on_bad_lines='skip')
