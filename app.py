@@ -38,25 +38,48 @@ BASE   = Path(__file__).parent
 OUTPUT = BASE / "output"
 is_admin = st.session_state.get("user_email", "") == "skbal@salesforce.com"
 
-st.markdown("""
+# ── Dark/Light mode toggle ────────────────────────────────────────────────────
+if "dark_mode" not in st.session_state:
+    st.session_state.dark_mode = False
+
+_col_spacer, _col_toggle = st.columns([11, 1])
+with _col_toggle:
+    if st.button("🌙" if not st.session_state.dark_mode else "☀️", help="Cambiar tema"):
+        st.session_state.dark_mode = not st.session_state.dark_mode
+        st.rerun()
+
+_dm = st.session_state.dark_mode
+_bg         = "#0e1117"   if _dm else "#f4f7fb"
+_card_bg    = "#1e2530"   if _dm else "white"
+_text       = "#e8ecf0"   if _dm else "#1a2e4a"
+_text_sec   = "#8899aa"   if _dm else "#8899aa"
+_border     = "#2d3748"   if _dm else "#f0f4f8"
+_table_head = "#0d1b2e"   if _dm else "#1a2e4a"
+_table_even = "#171f2b"   if _dm else "#fafcff"
+_table_hov  = "#1e2d40"   if _dm else "#eef4fb"
+_input_bg   = "#1e2530"   if _dm else "white"
+_input_bdr  = "#3d5068"   if _dm else "#d0dce8"
+
+st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-:root { color-scheme: light; }
+:root {{ color-scheme: {"dark" if _dm else "light"}; }}
 
-html, body, [class*="css"] {
+html, body, [class*="css"] {{
     font-family: 'Inter', sans-serif;
-    color: #1a2e4a !important;
-}
+    color: {_text} !important;
+    background-color: {_bg} !important;
+}}
 
-.stApp { background: #f4f7fb; color: #1a2e4a; }
+.stApp {{ background: {_bg}; color: {_text}; }}
 
-/* Forzar texto visible en todos los elementos de Streamlit */
-.stMarkdown, .stText, p, span, div, label, h1, h2, h3 { color: #1a2e4a; }
-.stSelectbox label, .stTextInput label { color: #1a2e4a !important; }
-[data-baseweb="select"] span { color: #1a2e4a !important; }
-.stTabs [data-baseweb="tab"] { color: #1a2e4a !important; }
-.stTabs [aria-selected="true"] { color: #1a2e4a !important; }
+.stMarkdown, .stText, p, span, div, label, h1, h2, h3 {{ color: {_text}; }}
+.stSelectbox label, .stTextInput label {{ color: {_text} !important; }}
+[data-baseweb="select"] span {{ color: {_text} !important; }}
+[data-baseweb="select"] > div {{ background: {_input_bg} !important; border-color: {_input_bdr} !important; }}
+.stTabs [data-baseweb="tab"] {{ color: {_text} !important; }}
+.stTabs [aria-selected="true"] {{ color: {_text} !important; }}
 
 /* Top bar */
 .top-bar {
@@ -82,53 +105,41 @@ html, body, [class*="css"] {
 }
 
 /* KPI cards */
-.kpi-card {
-    background: white;
+.kpi-card {{
+    background: {_card_bg};
     border-radius: 14px;
     padding: 22px 24px;
-    box-shadow: 0 1px 8px rgba(0,0,0,0.07);
+    box-shadow: 0 1px 8px rgba(0,0,0,0.15);
     border-top: 4px solid var(--kpi-color, #2E75B6);
     text-align: center;
-}
-.kpi-value {
+}}
+.kpi-value {{
     font-size: 2.6rem;
     font-weight: 800;
     color: var(--kpi-color, #2E75B6);
     line-height: 1;
     margin-bottom: 4px;
-}
-.kpi-label {
+}}
+.kpi-label {{
     font-size: 0.78rem;
     font-weight: 700;
-    color: #8899aa;
+    color: {_text_sec};
     text-transform: uppercase;
     letter-spacing: 0.8px;
-}
-
-/* Filter bar */
-.filter-bar {
-    background: white;
-    border-radius: 12px;
-    padding: 14px 24px;
-    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 24px;
-}
+}}
 
 /* Table */
-.funnel-table {
-    background: white;
+.funnel-table {{
+    background: {_card_bg};
     border-radius: 14px;
     padding: 0;
-    box-shadow: 0 1px 8px rgba(0,0,0,0.07);
+    box-shadow: 0 1px 8px rgba(0,0,0,0.15);
     overflow: hidden;
     width: 100%;
     border-collapse: collapse;
-}
-.funnel-table th {
-    background: #1a2e4a;
+}}
+.funnel-table th {{
+    background: {_table_head};
     color: white;
     font-size: 0.8rem;
     font-weight: 700;
@@ -136,26 +147,29 @@ html, body, [class*="css"] {
     letter-spacing: 0.6px;
     padding: 12px 16px;
     text-align: center;
-}
-.funnel-table th:first-child { text-align: left; }
-.funnel-table td {
+}}
+.funnel-table th:first-child {{ text-align: left; }}
+.funnel-table td {{
     padding: 12px 16px;
     text-align: center;
     font-size: 0.92rem;
-    border-bottom: 1px solid #f0f4f8;
-}
-.funnel-table td:first-child {
+    border-bottom: 1px solid {_border};
+    color: {_text};
+    background: {_card_bg};
+}}
+.funnel-table td:first-child {{
     text-align: left;
     font-weight: 700;
-    color: #1a2e4a;
+    color: {_text};
     font-size: 0.9rem;
-}
-.funnel-table tr:last-child td { border-bottom: none; }
-.funnel-table tr:nth-child(even) td { background: #fafcff; }
-.funnel-table tr:hover td { background: #eef4fb; }
+}}
+.funnel-table tr:last-child td {{ border-bottom: none; }}
+.funnel-table tr:nth-child(even) td {{ background: {_table_even}; }}
+.funnel-table tr:hover td {{ background: {_table_hov}; }}
 
-.cell-val { font-weight: 700; color: #1a2e4a; font-size: 1rem; }
-.cell-dash { color: #ccc; font-size: 1rem; }
+.cell-val {{ font-weight: 700; color: {_text}; font-size: 1rem; }}
+.cell-dash {{ color: {_text_sec}; font-size: 1rem; }}
+.section-title {{ color: {_text}; border-bottom-color: {_border}; }}
 
 /* Stage badges */
 .stage-badge {
