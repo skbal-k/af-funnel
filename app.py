@@ -310,7 +310,7 @@ sort_col = get_col(df, "Provisioned") or (df.columns[1] if len(df.columns) > 1 e
 df = df.sort_values(sort_col, ascending=False).head(top_n)
 partners = df["Partner"].tolist()
 
-# ── KPI cards ─────────────────────────────────────────────────────────────────
+# ── KPI data (pre-calculados, se muestran dentro de cada tab) ─────────────────
 prov_col  = get_col(df, "Provisioned")
 activ_col = get_col(df, "Activated")
 used_col  = get_col(df, "Used")
@@ -321,26 +321,19 @@ activ = int(df[activ_col].sum()) if activ_col else 0
 used  = int(df[used_col].sum())  if used_col  else 0
 cons  = int(df[cons_col].sum())  if cons_col  else 0
 
-kpi_cols = st.columns(5)
-kpis = [
-    ("Partners",     len(partners),  "#1a2e4a"),
-    ("Provisioned",  prov,           "#4472C4"),
-    ("Agent in Prod",activ,          "#375623"),
-    ("Used",         used,           "#808080"),
-    ("Consumed 50+", cons,           "#9C7A00"),
-]
-for col, (label, val, color) in zip(kpi_cols, kpis):
-    top_tag = "<div style='font-size:0.7rem;font-weight:700;color:#8899aa;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:2px'>Top</div>" if label == "Partners" else ""
-    html = (
-        f"<div class='kpi-card' style='--kpi-color:{color}'>"
-        + top_tag
-        + f"<div class='kpi-value'>{val:,}</div>"
-        + f"<div class='kpi-label'>{label}</div>"
-        + "</div>"
-    )
-    col.markdown(html, unsafe_allow_html=True)
-
-st.markdown("<br>", unsafe_allow_html=True)
+def render_kpis(kpis):
+    kpi_cols = st.columns(len(kpis))
+    for col, (label, val, color, is_top) in zip(kpi_cols, kpis):
+        top_tag = "<div style='font-size:0.7rem;font-weight:700;color:#8899aa;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:2px'>Top</div>" if is_top else ""
+        html = (
+            f"<div class='kpi-card' style='--kpi-color:{color}'>"
+            + top_tag
+            + f"<div class='kpi-value'>{val:,}</div>"
+            + f"<div class='kpi-label'>{label}</div>"
+            + "</div>"
+        )
+        col.markdown(html, unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
 
 # ── Tabla interactiva ─────────────────────────────────────────────────────────
 AGENT1_OUTPUT = BASE / "output"
@@ -350,6 +343,15 @@ tab1, tab3 = st.tabs(["📊  Funnel Table", "🌎  LACA Overview"])
 
 with tab1:
     st.markdown('<div class="section-title">Funnel by Implementation Partner</div>', unsafe_allow_html=True)
+
+    # KPIs del Funnel Table
+    render_kpis([
+        ("Partners",      len(partners), "#1a2e4a", True),
+        ("Provisioned",   prov,          "#4472C4", False),
+        ("Agent in Prod", activ,         "#375623", False),
+        ("Used",          used,          "#808080", False),
+        ("Consumed 50+",  cons,          "#9C7A00", False),
+    ])
 
     # Construir tabla
     short_names = []
@@ -437,6 +439,26 @@ with tab1:
 
 with tab3:
     st.markdown('<div class="section-title">LACA Agentforce Funnel — All Accounts (excl. ESMB)</div>', unsafe_allow_html=True)
+
+    # KPIs LACA Overview — leer totales del CSV
+    _laca_kpi_csv = AGENT1_OUTPUT / "laca_raw_data.csv"
+    if _laca_kpi_csv.exists():
+        try:
+            from funnel_builder import load_csv as _lkc, compute_metrics as _lkm
+            _lrows   = _lkc(_laca_kpi_csv)
+            _lmetrics = _lkm(_lrows)
+            _lp = _lmetrics.get("Provisioned",   {}).get("LATAM", 0)
+            _la = _lmetrics.get("Agent in Prod",  {}).get("LATAM", 0)
+            _lu = _lmetrics.get("Used",           {}).get("LATAM", 0)
+            _lc = _lmetrics.get("Consumed",       {}).get("LATAM", 0)
+            render_kpis([
+                ("LATAM Provisioned",   _lp, "#4472C4", False),
+                ("Agent in Prod",       _la, "#375623", False),
+                ("Used",                _lu, "#808080", False),
+                ("Consumed 50+",        _lc, "#9C7A00", False),
+            ])
+        except Exception:
+            pass
 
     laca_json = AGENT1_OUTPUT / "laca_latest.json"
 
