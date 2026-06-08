@@ -42,9 +42,21 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+:root { color-scheme: light; }
 
-.stApp { background: #f4f7fb; }
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif;
+    color: #1a2e4a !important;
+}
+
+.stApp { background: #f4f7fb; color: #1a2e4a; }
+
+/* Forzar texto visible en todos los elementos de Streamlit */
+.stMarkdown, .stText, p, span, div, label, h1, h2, h3 { color: #1a2e4a; }
+.stSelectbox label, .stTextInput label { color: #1a2e4a !important; }
+[data-baseweb="select"] span { color: #1a2e4a !important; }
+.stTabs [data-baseweb="tab"] { color: #1a2e4a !important; }
+.stTabs [aria-selected="true"] { color: #1a2e4a !important; }
 
 /* Top bar */
 .top-bar {
