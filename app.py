@@ -11,27 +11,8 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# ── Login — whitelist + contraseña ───────────────────────────────────────────
-_APP_PASSWORD = "agentforce"
-
-_ALLOWED_EMAILS = {
-    "skbal@salesforce.com",
-    "msancineto@salesforce.com",
-    "mschorsch@salesforce.com",
-    "dolores.mendez@salesforce.com",
-    "jetcheverry@salesforce.com",
-    "hcampuzano@salesforce.com",
-    "aida.blanco@salesforce.com",
-    "tpapaiz@salesforce.com",
-    "alarrarte@salesforce.com",
-    "rafael.hernandez@salesforce.com",
-    "jsauane@salesforce.com",
-    "jsynay@salesforce.com",
-    "nvincenti@salesforce.com",
-    "iprada@salesforce.com",
-    "enzo.horvath@salesforce.com",
-    "joseluis.cruz@salesforce.com",
-}
+# ── Login — contraseña por usuario desde Streamlit Secrets ───────────────────
+_PASSWORDS = dict(st.secrets.get("passwords", {}))
 
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
@@ -42,13 +23,14 @@ if not st.session_state["authenticated"]:
     email_input = st.text_input("Email (@salesforce.com)", key="login_email")
     pwd_input   = st.text_input("Contraseña", type="password", key="login_pwd")
     if st.button("Ingresar"):
-        if email_input.lower().strip() not in _ALLOWED_EMAILS:
+        _email = email_input.lower().strip()
+        if _email not in _PASSWORDS:
             st.error("Tu cuenta no tiene acceso. Contactá a skbal@salesforce.com.")
-        elif pwd_input != _APP_PASSWORD:
+        elif pwd_input != _PASSWORDS[_email]:
             st.error("Contraseña incorrecta.")
         else:
             st.session_state["authenticated"] = True
-            st.session_state["user_email"] = email_input.lower().strip()
+            st.session_state["user_email"] = _email
             st.rerun()
     st.stop()
 
