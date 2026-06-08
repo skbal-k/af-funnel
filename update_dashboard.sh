@@ -87,12 +87,12 @@ else
 fi
 echo ""
 
-# ── Sincronizar con Google Sheets (para la versión GAS) ──────
-echo -e "${YELLOW}▶ Sincronizando con Google Sheets...${NC}"
-if $PYTHON "$DIR/sync_to_sheets.py" 2>&1; then
-    echo -e "${GREEN}✅ Google Sheets sincronizado${NC}"
+# ── Generar CSVs para GAS (se leen desde GitHub) ─────────────
+echo -e "${YELLOW}▶ Generando CSVs para la versión Google Apps Script...${NC}"
+if $PYTHON "$DIR/generate_gas_csvs.py" 2>&1; then
+    echo -e "${GREEN}✅ CSVs para GAS generados${NC}"
 else
-    echo -e "${RED}❌ Error sincronizando con Google Sheets (continuando...)${NC}"
+    echo -e "${RED}❌ Error generando CSVs para GAS (continuando...)${NC}"
 fi
 echo ""
 
