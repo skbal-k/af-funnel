@@ -40,6 +40,19 @@ run_agent "Mexico"          "mexico_agent.py"
 run_agent "LATAM-Growth"    "growth_agent.py"
 run_agent "LATAM-Emerging"  "emg_agent.py"
 
+# ── Copiar archivos LACA Overview ────────────────────────────
+echo -e "${YELLOW}▶ Copiando datos LACA Overview...${NC}"
+LACA_SRC="/Users/skbal/claude/tableau_agent/outputs"
+if [ -d "$LACA_SRC" ]; then
+    [ -f "$LACA_SRC/raw_data.csv" ]        && cp "$LACA_SRC/raw_data.csv"        "$DIR/output/laca_raw_data.csv"
+    [ -f "$LACA_SRC/scale_accounts.csv" ]  && cp "$LACA_SRC/scale_accounts.csv"  "$DIR/output/laca_scale_accounts.csv"
+    [ -f "$LACA_SRC/latest.json" ]         && cp "$LACA_SRC/latest.json"         "$DIR/output/laca_latest.json"
+    echo -e "${GREEN}✅ LACA Overview OK${NC}"
+else
+    echo -e "${RED}❌ Carpeta tableau_agent no encontrada, saltando LACA Overview...${NC}"
+fi
+echo ""
+
 # ── Subir datos a GitHub ──────────────────────────────────────
 echo -e "${YELLOW}▶ Subiendo datos a GitHub...${NC}"
 
