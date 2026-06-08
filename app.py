@@ -444,18 +444,28 @@ with tab3:
     _laca_kpi_csv = AGENT1_OUTPUT / "laca_raw_data.csv"
     if _laca_kpi_csv.exists():
         try:
-            from funnel_builder import load_csv as _lkc, compute_metrics as _lkm
-            _lrows   = _lkc(_laca_kpi_csv)
+            from funnel_builder import load_csv as _lkc, compute_metrics as _lkm, compute_scale_metrics as _lksm
+            _lrows    = _lkc(_laca_kpi_csv)
             _lmetrics = _lkm(_lrows)
-            _lp = _lmetrics.get("Provisioned",   {}).get("LATAM", 0)
-            _la = _lmetrics.get("Agent in Prod",  {}).get("LATAM", 0)
-            _lu = _lmetrics.get("Used",           {}).get("LATAM", 0)
-            _lc = _lmetrics.get("Consumed",       {}).get("LATAM", 0)
+            _lp = _lmetrics.get("Provisioned",  {}).get("LATAM", 0)
+            _la = _lmetrics.get("Agent in Prod", {}).get("LATAM", 0)
+            _lu = _lmetrics.get("Used",          {}).get("LATAM", 0)
+            _lc = _lmetrics.get("Consumed",      {}).get("LATAM", 0)
+            # Scale
+            _ls = 0
+            _lscale_csv = AGENT1_OUTPUT / "laca_scale_accounts.csv"
+            if _lscale_csv.exists():
+                _lsdf = pd.read_csv(_lscale_csv, encoding="utf-8", on_bad_lines="skip")
+                _lid_col = next((c for c in _lsdf.columns if "ACCT_ID_18" in c.upper()), None)
+                if _lid_col:
+                    _lscale_ids = _lsdf[_lid_col].dropna().tolist()
+                    _ls = _lksm(_lrows, _lscale_ids).get("LATAM", 0)
             render_kpis([
-                ("LATAM Provisioned",   _lp, "#4472C4", False),
-                ("Agent in Prod",       _la, "#375623", False),
-                ("Used",                _lu, "#808080", False),
-                ("Consumed 50+",        _lc, "#9C7A00", False),
+                ("Provisioned",   _lp, "#4472C4", False),
+                ("Agent in Prod", _la, "#375623", False),
+                ("Used",          _lu, "#808080", False),
+                ("Consumed 50+",  _lc, "#9C7A00", False),
+                ("Scale",         _ls, "#C0504D", False),
             ])
         except Exception:
             pass
