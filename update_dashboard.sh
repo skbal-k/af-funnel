@@ -87,6 +87,15 @@ else
 fi
 echo ""
 
+# ── Sincronizar con Google Sheets (para la versión GAS) ──────
+echo -e "${YELLOW}▶ Sincronizando con Google Sheets...${NC}"
+if $PYTHON "$DIR/sync_to_sheets.py" 2>&1; then
+    echo -e "${GREEN}✅ Google Sheets sincronizado${NC}"
+else
+    echo -e "${RED}❌ Error sincronizando con Google Sheets (continuando...)${NC}"
+fi
+echo ""
+
 # ── Subir datos a GitHub ──────────────────────────────────────
 echo -e "${YELLOW}▶ Subiendo datos a GitHub...${NC}"
 
