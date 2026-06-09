@@ -3,56 +3,97 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AF Implementation Funnel</title>
+<title>⚡ AF Implementation Funnel</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Inter', sans-serif; background: #f4f7fb; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); transition: background 0.2s, color 0.2s; }
 
+/* ── Theme variables ── */
+:root {
+  --bg:         #f4f7fb;
+  --card:       #ffffff;
+  --text:       #1a2e4a;
+  --text-sec:   #8899aa;
+  --border:     #f0f4f8;
+  --head:       #1a2e4a;
+  --even:       #fafcff;
+  --hover:      #eef4fb;
+  --input-bg:   #ffffff;
+  --input-bdr:  #d0dce8;
+}
+body.dark {
+  --bg:         #0e1117;
+  --card:       #1e2530;
+  --text:       #e8ecf0;
+  --text-sec:   #8899aa;
+  --border:     #2d3748;
+  --head:       #0d1b2e;
+  --even:       #171f2b;
+  --hover:      #1e2d40;
+  --input-bg:   #1e2530;
+  --input-bdr:  #3d5068;
+}
+
+/* ── Top bar ── */
 .top-bar {
   background: #1a2e4a;
-  padding: 18px 32px;
+  padding: 16px 28px;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
-.top-bar-title { color: white; font-size: 1.3rem; font-weight: 800; }
-.top-bar-sub   { color: #8eaecf; font-size: 0.8rem; margin-top: 2px; }
+.top-bar-title { color: white; font-size: 1.25rem; font-weight: 800; }
+.top-bar-sub   { color: #8eaecf; font-size: 0.78rem; margin-top: 2px; }
+.theme-btn {
+  background: rgba(255,255,255,0.15);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 1.1rem;
+  width: 36px; height: 36px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s;
+}
+.theme-btn:hover { background: rgba(255,255,255,0.25); }
 
+/* ── Filter bar ── */
 .filter-bar {
-  background: white;
-  padding: 14px 32px;
+  background: var(--card);
+  padding: 14px 28px;
   display: flex;
   align-items: flex-end;
-  gap: 20px;
+  gap: 16px;
   box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+  flex-wrap: wrap;
 }
-.filter-group { display: flex; flex-direction: column; gap: 4px; }
-.filter-label { font-size: 0.73rem; font-weight: 700; color: #8899aa; text-transform: uppercase; letter-spacing: 0.6px; }
+.filter-label { font-size: 0.72rem; font-weight: 700; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; }
 select {
   padding: 8px 14px;
-  border: 1.5px solid #d0dce8;
+  border: 1.5px solid var(--input-bdr);
   border-radius: 8px;
   font-family: 'Inter', sans-serif;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #1a2e4a;
-  background: white;
+  color: var(--text);
+  background: var(--input-bg);
   cursor: pointer;
-  min-width: 180px;
+  min-width: 200px;
   outline: none;
 }
-select:focus { border-color: #2E75B6; }
 
+/* ── Buttons ── */
 .btn {
-  padding: 9px 22px;
+  padding: 9px 20px;
   border: none;
   border-radius: 8px;
   font-family: 'Inter', sans-serif;
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
   transition: opacity 0.2s;
+  white-space: nowrap;
 }
 .btn-primary {
   background: linear-gradient(135deg, #1a2e4a 0%, #2E75B6 100%);
@@ -62,115 +103,126 @@ select:focus { border-color: #2E75B6; }
 .btn-primary:hover { opacity: 0.85; }
 .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.content { padding: 28px 32px; }
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 28px;
+  background: var(--card);
+  border-bottom: 2px solid var(--border);
+}
+.tab-btn {
+  padding: 12px 20px;
+  border: none;
+  background: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-sec);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.2s;
+}
+.tab-btn.active { color: #2E75B6; border-bottom-color: #2E75B6; }
+.tab-btn:hover { color: var(--text); }
 
-/* KPI cards */
-.kpi-row { display: flex; gap: 16px; margin-bottom: 28px; }
+/* ── Content ── */
+.content { padding: 24px 28px; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── KPI cards ── */
+.kpi-row { display: flex; gap: 14px; margin-bottom: 24px; flex-wrap: wrap; }
 .kpi-card {
-  flex: 1;
-  background: white;
+  flex: 1; min-width: 120px;
+  background: var(--card);
   border-radius: 14px;
-  padding: 20px 24px;
-  box-shadow: 0 1px 8px rgba(0,0,0,0.07);
+  padding: 18px 20px;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.08);
   border-top: 4px solid var(--c);
   text-align: center;
 }
-.kpi-value { font-size: 2.4rem; font-weight: 800; color: var(--c); line-height: 1; }
-.kpi-label { font-size: 0.72rem; font-weight: 700; color: #8899aa; text-transform: uppercase; letter-spacing: 0.8px; margin-top: 4px; }
+.kpi-value { font-size: 2.2rem; font-weight: 800; color: var(--c); line-height: 1; }
+.kpi-top   { font-size: 0.65rem; font-weight: 700; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 2px; }
+.kpi-label { font-size: 0.7rem; font-weight: 700; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 4px; }
 
-/* Table */
-.table-wrap {
-  background: white;
-  border-radius: 14px;
-  box-shadow: 0 1px 8px rgba(0,0,0,0.07);
-  overflow-x: auto;
-}
+/* ── Table ── */
 .section-title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #1a2e4a;
-  padding: 18px 20px 10px;
-  border-bottom: 2px solid #e8f0f8;
+  font-size: 0.95rem; font-weight: 700; color: var(--text);
+  margin-bottom: 12px; padding-bottom: 8px;
+  border-bottom: 2px solid var(--border);
+}
+.table-wrap {
+  background: var(--card);
+  border-radius: 14px;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.08);
+  overflow-x: auto;
+  margin-bottom: 24px;
 }
 table { width: 100%; border-collapse: collapse; }
-thead tr { background: #1a2e4a; }
+thead tr { background: var(--head); }
 th {
-  color: white;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  padding: 12px 14px;
-  text-align: center;
-  white-space: nowrap;
+  color: white; font-size: 0.73rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.6px;
+  padding: 11px 13px; text-align: center; white-space: nowrap;
 }
-th:first-child { text-align: left; min-width: 140px; }
+th:first-child { text-align: left; min-width: 130px; }
 td {
-  padding: 12px 14px;
-  text-align: center;
-  font-size: 0.92rem;
-  border-bottom: 1px solid #f0f4f8;
+  padding: 11px 13px; text-align: center;
+  font-size: 0.9rem; border-bottom: 1px solid var(--border);
+  color: var(--text); background: var(--card);
 }
-td:first-child {
-  text-align: left;
-  font-weight: 700;
-  color: #1a2e4a;
-}
+td:first-child { text-align: left; font-weight: 700; }
 tr:last-child td { border-bottom: none; }
-tr:nth-child(even) td { background: #fafcff; }
-tr:hover td { background: #eef4fb; }
+tr:nth-child(even) td { background: var(--even); }
+tr:hover td { background: var(--hover); }
 
 .stage-dot {
-  display: inline-block;
-  width: 12px; height: 12px;
-  border-radius: 50%;
-  margin-right: 8px;
-  vertical-align: middle;
+  display: inline-block; width: 11px; height: 11px;
+  border-radius: 50%; margin-right: 7px; vertical-align: middle;
 }
 .val-pos { font-weight: 700; }
-.val-zero { color: #ccc; }
+.val-zero { color: var(--text-sec); }
+.val-pct  { font-size: 0.72rem; color: var(--text-sec); display: block; }
 
-.updated { font-size: 0.72rem; color: #aaa; padding: 12px 20px; }
+.updated { font-size: 0.7rem; color: var(--text-sec); padding: 10px 16px; }
 
-/* Spinner */
+/* ── Spinner ── */
 .spinner-overlay {
-  display: none;
-  position: fixed; inset: 0;
-  background: rgba(255,255,255,0.7);
-  z-index: 999;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 14px;
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.3); z-index: 999;
+  align-items: center; justify-content: center; flex-direction: column; gap: 12px;
 }
 .spinner-overlay.active { display: flex; }
 .spinner {
-  width: 44px; height: 44px;
-  border: 4px solid #d0dce8;
-  border-top-color: #2E75B6;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  width: 42px; height: 42px;
+  border: 4px solid #d0dce8; border-top-color: #2E75B6;
+  border-radius: 50%; animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-.spinner-text { color: #1a2e4a; font-weight: 700; font-size: 0.95rem; }
+.spinner-text { color: white; font-weight: 700; font-size: 0.9rem; }
 
+/* ── Error ── */
 .error-msg {
-  background: #fff0f0;
-  border: 1px solid #f5c6c6;
-  border-radius: 10px;
-  padding: 16px 20px;
-  color: #c0392b;
-  font-size: 0.9rem;
-  margin: 20px 0;
+  background: #fff0f0; border: 1px solid #f5c6c6;
+  border-radius: 10px; padding: 14px 18px;
+  color: #c0392b; font-size: 0.88rem; margin: 16px 0;
 }
+.info-msg {
+  background: #f0f6ff; border: 1px solid #b8d4f5;
+  border-radius: 10px; padding: 14px 18px;
+  color: #1a5ca8; font-size: 0.88rem; margin: 16px 0;
+}
+body.dark .error-msg { background: #2d1515; border-color: #8b3333; color: #f08080; }
+body.dark .info-msg  { background: #152030; border-color: #2e5a8b; color: #80b8f0; }
 </style>
 </head>
 <body>
 
-<!-- Spinner -->
 <div class="spinner-overlay" id="spinner">
   <div class="spinner"></div>
-  <div class="spinner-text">Loading data...</div>
+  <div class="spinner-text" id="spinnerText">Cargando datos...</div>
 </div>
 
 <!-- Top bar -->
@@ -179,39 +231,76 @@ tr:hover td { background: #eef4fb; }
     <div class="top-bar-title">⚡ AF Implementation Funnel</div>
     <div class="top-bar-sub">Agentforce Cumulative Go-Live · LATAM Partner Team</div>
   </div>
+  <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
 </div>
 
 <!-- Filter bar -->
 <div class="filter-bar">
-  <div class="filter-group">
+  <div>
     <div class="filter-label">Sub Sub Region</div>
-    <select id="regionSelect"></select>
+    <select id="regionSelect" onchange="loadFunnelData()"></select>
   </div>
-  <button class="btn btn-primary" id="loadBtn" onclick="loadData()">🔄 Load Data</button>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('funnel', this)">📊 Funnel Table</button>
+  <button class="tab-btn"        onclick="switchTab('laca', this)">🌎 LACA Overview</button>
 </div>
 
 <!-- Content -->
 <div class="content">
-  <div id="errorMsg" class="error-msg" style="display:none"></div>
-
-  <!-- KPIs -->
-  <div class="kpi-row" id="kpiRow" style="display:none">
-    <div class="kpi-card" style="--c:#1a2e4a"><div class="kpi-value" id="kpi-partners">–</div><div class="kpi-label">Partners</div></div>
-    <div class="kpi-card" style="--c:#4472C4"><div class="kpi-value" id="kpi-prov">–</div><div class="kpi-label">Provisioned</div></div>
-    <div class="kpi-card" style="--c:#375623"><div class="kpi-value" id="kpi-activ">–</div><div class="kpi-label">Agent in Prod</div></div>
-    <div class="kpi-card" style="--c:#808080"><div class="kpi-value" id="kpi-used">–</div><div class="kpi-label">Used</div></div>
-    <div class="kpi-card" style="--c:#9C7A00"><div class="kpi-value" id="kpi-cons">–</div><div class="kpi-label">Consumed 50+</div></div>
+  <div id="tab-funnel" class="tab-panel active">
+    <div id="funnelError" class="error-msg" style="display:none"></div>
+    <div id="kpiRow" class="kpi-row" style="display:none">
+      <div class="kpi-card" style="--c:#1a2e4a"><div class="kpi-top">Top</div><div class="kpi-value" id="kpi-partners">–</div><div class="kpi-label">Partners</div></div>
+      <div class="kpi-card" style="--c:#4472C4"><div class="kpi-value" id="kpi-prov">–</div><div class="kpi-label">Provisioned</div></div>
+      <div class="kpi-card" style="--c:#375623"><div class="kpi-value" id="kpi-activ">–</div><div class="kpi-label">Agent in Prod</div></div>
+      <div class="kpi-card" style="--c:#808080"><div class="kpi-value" id="kpi-used">–</div><div class="kpi-label">Used</div></div>
+      <div class="kpi-card" style="--c:#9C7A00"><div class="kpi-value" id="kpi-cons">–</div><div class="kpi-label">Consumed 50+</div></div>
+    </div>
+    <div class="section-title" id="funnelTitle" style="display:none">Funnel by Implementation Partner</div>
+    <div class="table-wrap" id="funnelTableWrap" style="display:none">
+      <div id="funnelTable"></div>
+      <div class="updated" id="funnelUpdated"></div>
+    </div>
   </div>
 
-  <!-- Table -->
-  <div class="table-wrap" id="tableWrap" style="display:none">
-    <div class="section-title">Funnel by Implementation Partner</div>
-    <div id="tableContainer"></div>
-    <div class="updated" id="updatedAt"></div>
+  <div id="tab-laca" class="tab-panel">
+    <div id="lacaError" class="error-msg" style="display:none"></div>
+    <div id="lacaKpiRow" class="kpi-row" style="display:none">
+      <div class="kpi-card" style="--c:#4472C4"><div class="kpi-value" id="lkpi-prov">–</div><div class="kpi-label">Provisioned</div></div>
+      <div class="kpi-card" style="--c:#375623"><div class="kpi-value" id="lkpi-activ">–</div><div class="kpi-label">Agent in Prod</div></div>
+      <div class="kpi-card" style="--c:#808080"><div class="kpi-value" id="lkpi-used">–</div><div class="kpi-label">Used</div></div>
+      <div class="kpi-card" style="--c:#9C7A00"><div class="kpi-value" id="lkpi-cons">–</div><div class="kpi-label">Consumed 50+</div></div>
+      <div class="kpi-card" style="--c:#C0504D"><div class="kpi-value" id="lkpi-scale">–</div><div class="kpi-label">Scale</div></div>
+    </div>
+    <div class="section-title">LACA Agentforce Funnel — All Accounts (excl. ESMB)</div>
+    <div class="table-wrap" id="lacaTableWrap" style="display:none">
+      <div id="lacaTable"></div>
+    </div>
+    <div style="margin-top:28px">
+      <div class="section-title">⚡ Scale Accounts — 100K+ Actions/Week</div>
+      <div class="table-wrap" id="scaleTableWrap" style="display:none">
+        <div id="scaleTable"></div>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
+var GITHUB_RAW = "https://raw.githubusercontent.com/skbal-k/af-funnel/main/output/";
+
+var REGIONS = {
+  "🌎  LACA (All)":      "gas_laca.csv",
+  "🇧🇷  Brazil":         "gas_brazil.csv",
+  "🇲🇽  Mexico":         "gas_mexico.csv",
+  "📈  LATAM-Growth":   "gas_latam_growth.csv",
+  "🌱  LATAM-Emerging": "gas_latam_emerging.csv"
+};
+
+var STAGES = ["Provisioned","Discovery","Agent Created","Agent in Prod","Used","Consumed 50+","Scale"];
+
 var STAGE_COLORS = {
   "Provisioned":   "#4472C4",
   "Discovery":     "#2E75B6",
@@ -222,106 +311,242 @@ var STAGE_COLORS = {
   "Scale":         "#C0504D"
 };
 
+var LACA_COLS = [
+  ["LATAM",        "LATAM"],
+  ["LATAM\nPrtns", "LATAM Prtns"],
+  ["Brazil",       "Brazil"],
+  ["Brazil\nPrtns","Brazil Prtns"],
+  ["Mexico",       "Mexico"],
+  ["Mexico\nPrtns","Mexico Prtns"],
+  ["Growth",       "Growth"],
+  ["Growth\nPrtns","Growth Prtns"],
+  ["Emerging",     "Emerging"],
+  ["Emerg\nPrtns", "Emerg Prtns"]
+];
+
+var PCT_BASES = {
+  "LATAM Prtns":  "LATAM",
+  "Brazil Prtns": "Brazil",
+  "Mexico Prtns": "Mexico",
+  "Growth Prtns": "Growth",
+  "Emerg Prtns":  "Emerging"
+};
+
+var lacaLoaded = false;
+
+// ── CSV ────────────────────────────────────────────────────────────────────
+function parseCsv(text) {
+  var lines = text.trim().split("\n");
+  if (lines.length < 2) return [];
+  var headers = lines[0].split(",").map(function(h){ return h.trim().replace(/^"|"$/g,""); });
+  var rows = [];
+  for (var i = 1; i < lines.length; i++) {
+    var vals = lines[i].split(",").map(function(v){ return v.trim().replace(/^"|"$/g,""); });
+    var row = {};
+    for (var j = 0; j < headers.length; j++) row[headers[j]] = vals[j] || "";
+    rows.push(row);
+  }
+  return rows;
+}
+
+function fetchCsv(filename) {
+  return fetch(GITHUB_RAW + filename + "?t=" + new Date().getTime())
+    .then(function(r) {
+      if (!r.ok) throw new Error("HTTP " + r.status + " al cargar " + filename);
+      return r.text();
+    })
+    .then(parseCsv);
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
 function shortName(name) {
   return name
     .replace(/ TECNOLOGIA LTDA dba EVERYMIND/gi, "")
     .replace(/ TECNOLOGIA LTDA/gi, "")
     .replace(/ LLC/gi, "").replace(/ LTDA/gi, "").replace(/ S\.A\./gi, "")
-    .trim()
-    .substring(0, 18);
+    .trim().substring(0, 18);
+}
+function fmt(n) { n = parseInt(n)||0; return n > 0 ? n.toLocaleString() : "–"; }
+function fmtAwu(n) {
+  n = parseInt(String(n).replace(/,/g,""))||0;
+  if (n >= 1000000) return (n/1000000).toFixed(1)+"M";
+  if (n >= 1000) return Math.round(n/1000)+"K";
+  return n > 0 ? String(n) : "–";
+}
+function pct(a,b) { a=parseInt(a)||0; b=parseInt(b)||0; return b ? Math.round(a/b*100)+"%" : "–"; }
+function sum(arr,key) { return arr.reduce(function(s,p){ return s+(parseInt(p[key])||0); },0); }
+function showSpinner(msg) { document.getElementById("spinnerText").textContent=msg||"Cargando..."; document.getElementById("spinner").classList.add("active"); }
+function hideSpinner() { document.getElementById("spinner").classList.remove("active"); }
+function showError(id,msg) { var el=document.getElementById(id); el.textContent="❌ "+msg; el.style.display="block"; }
+
+// ── Theme ──────────────────────────────────────────────────────────────────
+var dark = false;
+function toggleTheme() {
+  dark = !dark;
+  document.body.classList.toggle("dark", dark);
+  document.getElementById("themeBtn").textContent = dark ? "☀️" : "🌙";
 }
 
-function fmt(n) {
-  return n > 0 ? n.toLocaleString() : "–";
+// ── Tabs ───────────────────────────────────────────────────────────────────
+function switchTab(tab, btn) {
+  document.querySelectorAll(".tab-panel").forEach(function(p){ p.classList.remove("active"); });
+  document.querySelectorAll(".tab-btn").forEach(function(b){ b.classList.remove("active"); });
+  document.getElementById("tab-"+tab).classList.add("active");
+  btn.classList.add("active");
+  if (tab === "laca" && !lacaLoaded) loadLacaData();
 }
 
-// Load region options
-google.script.run.withSuccessHandler(function(regions) {
+// ── Init ───────────────────────────────────────────────────────────────────
+(function init() {
   var sel = document.getElementById("regionSelect");
-  regions.forEach(function(r) {
+  Object.keys(REGIONS).forEach(function(r) {
     var opt = document.createElement("option");
     opt.value = r; opt.textContent = r;
     sel.appendChild(opt);
   });
-  loadData();
-}).getRegions();
+  loadFunnelData();
+})();
 
-function loadData() {
+// ── Funnel Table ───────────────────────────────────────────────────────────
+function loadFunnelData() {
   var region = document.getElementById("regionSelect").value;
   if (!region) return;
-  document.getElementById("spinner").classList.add("active");
-  document.getElementById("loadBtn").disabled = true;
-  document.getElementById("errorMsg").style.display = "none";
+  showSpinner("Cargando datos...");
+  document.getElementById("funnelError").style.display = "none";
   document.getElementById("kpiRow").style.display = "none";
-  document.getElementById("tableWrap").style.display = "none";
+  document.getElementById("funnelTitle").style.display = "none";
+  document.getElementById("funnelTableWrap").style.display = "none";
 
-  google.script.run
-    .withSuccessHandler(renderData)
-    .withFailureHandler(function(err) {
-      document.getElementById("spinner").classList.remove("active");
-      document.getElementById("loadBtn").disabled = false;
-      showError(err.message || String(err));
-    })
-    .getFunnelData(region);
+  Promise.all([
+    fetchCsv(REGIONS[region]),
+    fetchCsv("gas_scale_accounts.csv").catch(function(){ return []; })
+  ]).then(function(res) {
+    var rows = res[0], scaleRows = res[1];
+    var scaleByPartner = {};
+    scaleRows.forEach(function(s) {
+      var p = (s["Impl Partner"]||"").trim();
+      if (p && p !== "Direct") { var k=p.toUpperCase(); scaleByPartner[k]=(scaleByPartner[k]||0)+1; }
+    });
+    var partners = rows.slice(0,11).map(function(row) {
+      var entry = { name: row["Partner"]||"" };
+      STAGES.forEach(function(st){ entry[st] = parseInt(row[st])||0; });
+      var pUp = entry.name.toUpperCase(), scaleVal = 0;
+      for (var k in scaleByPartner) {
+        if (pUp.indexOf(k)>=0 || k.indexOf(pUp)>=0) { scaleVal=scaleByPartner[k]; break; }
+      }
+      entry["Scale"] = scaleVal;
+      return entry;
+    });
+    renderFunnel({ partners: partners, stages: STAGES, region: region });
+  }).catch(function(err) {
+    hideSpinner();
+    showError("funnelError", err.message||String(err));
+  });
 }
 
-function showError(msg) {
-  var el = document.getElementById("errorMsg");
-  el.textContent = "❌ " + msg;
-  el.style.display = "block";
-}
-
-function renderData(result) {
-  document.getElementById("spinner").classList.remove("active");
-  document.getElementById("loadBtn").disabled = false;
-
-  if (result.error) { showError(result.error); return; }
-
-  var partners = result.partners;
-  var stages   = result.stages;
-
-  // KPIs
-  var totProv  = partners.reduce(function(s,p){ return s + (p["Provisioned"]||0); }, 0);
-  var totActiv = partners.reduce(function(s,p){ return s + (p["Agent in Prod"]||0); }, 0);
-  var totUsed  = partners.reduce(function(s,p){ return s + (p["Used"]||0); }, 0);
-  var totCons  = partners.reduce(function(s,p){ return s + (p["Consumed 50+"]||0); }, 0);
-
+function renderFunnel(result) {
+  hideSpinner();
+  var partners = result.partners, stages = result.stages;
   document.getElementById("kpi-partners").textContent = partners.length;
-  document.getElementById("kpi-prov").textContent     = totProv.toLocaleString();
-  document.getElementById("kpi-activ").textContent    = totActiv.toLocaleString();
-  document.getElementById("kpi-used").textContent     = totUsed.toLocaleString();
-  document.getElementById("kpi-cons").textContent     = totCons.toLocaleString();
+  document.getElementById("kpi-prov").textContent     = sum(partners,"Provisioned").toLocaleString();
+  document.getElementById("kpi-activ").textContent    = sum(partners,"Agent in Prod").toLocaleString();
+  document.getElementById("kpi-used").textContent     = sum(partners,"Used").toLocaleString();
+  document.getElementById("kpi-cons").textContent     = sum(partners,"Consumed 50+").toLocaleString();
   document.getElementById("kpiRow").style.display     = "flex";
 
-  // Table
   var html = "<table><thead><tr><th>Stage</th>";
-  partners.forEach(function(p) { html += "<th>" + shortName(p.name) + "</th>"; });
+  partners.forEach(function(p){ html += "<th>"+shortName(p.name)+"</th>"; });
   html += "<th>Total</th></tr></thead><tbody>";
-
   stages.forEach(function(stage) {
-    var color = STAGE_COLORS[stage] || "#999";
-    html += "<tr><td><span class='stage-dot' style='background:" + color + "'></span>" + stage + "</td>";
+    var color = STAGE_COLORS[stage]||"#999";
+    html += "<tr><td><span class='stage-dot' style='background:"+color+"'></span>"+stage+"</td>";
     var total = 0;
     partners.forEach(function(p) {
-      var val = p[stage] || 0;
-      total += val;
-      if (val > 0) {
-        html += "<td class='val-pos' style='color:" + color + "'>" + val.toLocaleString() + "</td>";
+      var val = parseInt(p[stage])||0; total += val;
+      html += val>0 ? "<td class='val-pos' style='color:"+color+"'>"+val.toLocaleString()+"</td>" : "<td class='val-zero'>–</td>";
+    });
+    html += "<td><b style='color:"+color+"'>"+total.toLocaleString()+"</b></td></tr>";
+  });
+  html += "</tbody></table>";
+  document.getElementById("funnelTable").innerHTML = html;
+  document.getElementById("funnelTitle").style.display = "block";
+  document.getElementById("funnelTableWrap").style.display = "block";
+  document.getElementById("funnelUpdated").textContent = "Last loaded: "+new Date().toLocaleString();
+}
+
+// ── LACA Overview ──────────────────────────────────────────────────────────
+function loadLacaData() {
+  showSpinner("Cargando LACA Overview...");
+  document.getElementById("lacaError").style.display = "none";
+
+  fetchCsv("gas_laca_overview.csv")
+    .then(function(rows) {
+      renderLacaOverview(rows);
+      return fetchCsv("gas_scale_accounts.csv");
+    })
+    .then(function(accounts) {
+      hideSpinner();
+      renderScaleAccounts(accounts);
+    })
+    .catch(function(err) {
+      hideSpinner();
+      showError("lacaError", err.message||String(err));
+    });
+}
+
+function renderLacaOverview(rows) {
+  var find = function(kw){ var r=null; rows.forEach(function(x){ if(String(x.Stage||"").toLowerCase().indexOf(kw)>=0) r=x; }); return r; };
+  var provRow=find("provisioned"), actRow=find("prod"), usedRow=find("used"), consRow=find("consum"), scalRow=find("scale");
+  if(provRow) document.getElementById("lkpi-prov").textContent  = fmt(provRow["LATAM"]);
+  if(actRow)  document.getElementById("lkpi-activ").textContent = fmt(actRow["LATAM"]);
+  if(usedRow) document.getElementById("lkpi-used").textContent  = fmt(usedRow["LATAM"]);
+  if(consRow) document.getElementById("lkpi-cons").textContent  = fmt(consRow["LATAM"]);
+  if(scalRow) document.getElementById("lkpi-scale").textContent = fmt(scalRow["LATAM"]);
+  document.getElementById("lacaKpiRow").style.display = "flex";
+
+  var html = "<table><thead><tr><th>Stage</th>";
+  LACA_COLS.forEach(function(c){ html += "<th>"+c[0].replace("\n","<br>")+"</th>"; });
+  html += "</tr></thead><tbody>";
+  rows.forEach(function(row) {
+    var stage = String(row["Stage"]||"");
+    var color = STAGE_COLORS[stage]||STAGE_COLORS[stage.replace(" 50+","")]||"#4472C4";
+    html += "<tr><td><span class='stage-dot' style='background:"+color+"'></span>"+stage+"</td>";
+    LACA_COLS.forEach(function(c) {
+      var key=c[1], val=parseInt(row[key])||0, baseKey=PCT_BASES[key];
+      if (baseKey) {
+        var base=parseInt(row[baseKey])||0, p=pct(val,base);
+        html += val>0 ? "<td class='val-pos' style='color:"+color+"'>"+val.toLocaleString()+"<span class='val-pct'>"+p+"</span></td>" : "<td class='val-zero'>–</td>";
       } else {
-        html += "<td class='val-zero'>–</td>";
+        html += val>0 ? "<td class='val-pos' style='color:"+color+"'>"+val.toLocaleString()+"</td>" : "<td class='val-zero'>–</td>";
       }
     });
-    html += "<td><b style='color:" + color + "'>" + total.toLocaleString() + "</b></td></tr>";
+    html += "</tr>";
   });
-
   html += "</tbody></table>";
-  document.getElementById("tableContainer").innerHTML = html;
+  document.getElementById("lacaTable").innerHTML = html;
+  document.getElementById("lacaTableWrap").style.display = "block";
+  lacaLoaded = true;
+}
 
-  var now = new Date();
-  document.getElementById("updatedAt").textContent =
-    "Last loaded: " + now.toLocaleDateString() + " " + now.toLocaleTimeString();
-
-  document.getElementById("tableWrap").style.display = "block";
+// ── Scale Accounts ─────────────────────────────────────────────────────────
+function renderScaleAccounts(accounts) {
+  if (!accounts||!accounts.length) return;
+  var html = "<table><thead><tr><th>Account</th><th>Region</th><th>Impl Partner</th><th>Actions/week</th></tr></thead><tbody>";
+  accounts.forEach(function(a) {
+    var partner = String(a["Impl Partner"]||"Direct").trim();
+    var partnerHtml = partner!=="Direct"
+      ? "<span style='color:#C0504D;font-weight:700'>"+partner+"</span>"
+      : "<span style='color:var(--text-sec)'>Direct</span>";
+    html += "<tr>"
+      +"<td style='text-align:left;font-weight:600'>"+String(a["Account"]||a["Account Name"]||"")+"</td>"
+      +"<td>"+String(a["Region"]||"")+"</td>"
+      +"<td>"+partnerHtml+"</td>"
+      +"<td><span style='color:#C0504D;font-weight:700'>"+fmtAwu(a["AWUs"]||0)+"</span></td>"
+      +"</tr>";
+  });
+  html += "</tbody></table>";
+  document.getElementById("scaleTable").innerHTML = html;
+  document.getElementById("scaleTableWrap").style.display = "block";
 }
 </script>
 </body>
