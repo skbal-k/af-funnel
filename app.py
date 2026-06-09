@@ -11,8 +11,8 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# ── Login — email @salesforce.com + contraseña ────────────────────────────────
-_APP_PASSWORD = "agentforce"
+# ── Login — contraseña por usuario desde Streamlit Secrets ───────────────────
+_PASSWORDS = dict(st.secrets.get("passwords", {}))
 
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
@@ -23,29 +23,66 @@ if not st.session_state["authenticated"]:
     email_input = st.text_input("Email (@salesforce.com)", key="login_email")
     pwd_input   = st.text_input("Contraseña", type="password", key="login_pwd")
     if st.button("Ingresar"):
-        if not email_input.endswith("@salesforce.com"):
-            st.error("Solo se permite acceso con cuentas @salesforce.com.")
-        elif pwd_input != _APP_PASSWORD:
+        _email = email_input.lower().strip()
+        if _email not in _PASSWORDS:
+            st.error("Tu cuenta no tiene acceso. Contactá a skbal@salesforce.com.")
+        elif pwd_input != _PASSWORDS[_email]:
             st.error("Contraseña incorrecta.")
         else:
             st.session_state["authenticated"] = True
-            st.session_state["user_email"] = email_input
+            st.session_state["user_email"] = _email
             st.rerun()
     st.stop()
 
 BASE   = Path(__file__).parent
 OUTPUT = BASE / "output"
+is_admin = st.session_state.get("user_email", "") == "skbal@salesforce.com"
 
-st.markdown("""
+# ── Dark/Light mode toggle ────────────────────────────────────────────────────
+if "dark_mode" not in st.session_state:
+    st.session_state.dark_mode = False
+
+_col_spacer, _col_toggle = st.columns([11, 1])
+with _col_toggle:
+    if st.button("🌙" if not st.session_state.dark_mode else "☀️", help="Cambiar tema"):
+        st.session_state.dark_mode = not st.session_state.dark_mode
+        st.rerun()
+
+_dm = st.session_state.dark_mode
+_bg         = "#0e1117"   if _dm else "#f4f7fb"
+_card_bg    = "#1e2530"   if _dm else "white"
+_text       = "#e8ecf0"   if _dm else "#1a2e4a"
+_text_sec   = "#8899aa"   if _dm else "#8899aa"
+_border     = "#2d3748"   if _dm else "#f0f4f8"
+_table_head = "#0d1b2e"   if _dm else "#1a2e4a"
+_table_even = "#171f2b"   if _dm else "#fafcff"
+_table_hov  = "#1e2d40"   if _dm else "#eef4fb"
+_input_bg   = "#1e2530"   if _dm else "white"
+_input_bdr  = "#3d5068"   if _dm else "#d0dce8"
+
+st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+:root {{ color-scheme: {"dark" if _dm else "light"}; }}
 
-.stApp { background: #f4f7fb; }
+html, body, [class*="css"] {{
+    font-family: 'Inter', sans-serif;
+    color: {_text} !important;
+    background-color: {_bg} !important;
+}}
+
+.stApp {{ background: {_bg}; color: {_text}; }}
+
+.stMarkdown, .stText, p, span, div, label, h1, h2, h3 {{ color: {_text}; }}
+.stSelectbox label, .stTextInput label {{ color: {_text} !important; }}
+[data-baseweb="select"] span {{ color: {_text} !important; }}
+[data-baseweb="select"] > div {{ background: {_input_bg} !important; border-color: {_input_bdr} !important; }}
+.stTabs [data-baseweb="tab"] {{ color: {_text} !important; }}
+.stTabs [aria-selected="true"] {{ color: {_text} !important; }}
 
 /* Top bar */
-.top-bar {
+.top-bar {{
     background: #1a2e4a;
     border-radius: 12px;
     padding: 18px 28px;
@@ -53,68 +90,56 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     align-items: center;
     gap: 16px;
     margin-bottom: 24px;
-}
-.top-bar-title {
+}}
+.top-bar-title {{
     color: white;
     font-size: 1.35rem;
     font-weight: 800;
     letter-spacing: -0.3px;
     margin: 0;
-}
-.top-bar-sub {
+}}
+.top-bar-sub {{
     color: #8eaecf;
     font-size: 0.82rem;
     margin: 0;
-}
+}}
 
 /* KPI cards */
-.kpi-card {
-    background: white;
+.kpi-card {{
+    background: {_card_bg};
     border-radius: 14px;
     padding: 22px 24px;
-    box-shadow: 0 1px 8px rgba(0,0,0,0.07);
+    box-shadow: 0 1px 8px rgba(0,0,0,0.15);
     border-top: 4px solid var(--kpi-color, #2E75B6);
     text-align: center;
-}
-.kpi-value {
+}}
+.kpi-value {{
     font-size: 2.6rem;
     font-weight: 800;
     color: var(--kpi-color, #2E75B6);
     line-height: 1;
     margin-bottom: 4px;
-}
-.kpi-label {
+}}
+.kpi-label {{
     font-size: 0.78rem;
     font-weight: 700;
-    color: #8899aa;
+    color: {_text_sec};
     text-transform: uppercase;
     letter-spacing: 0.8px;
-}
-
-/* Filter bar */
-.filter-bar {
-    background: white;
-    border-radius: 12px;
-    padding: 14px 24px;
-    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 24px;
-}
+}}
 
 /* Table */
-.funnel-table {
-    background: white;
+.funnel-table {{
+    background: {_card_bg};
     border-radius: 14px;
     padding: 0;
-    box-shadow: 0 1px 8px rgba(0,0,0,0.07);
+    box-shadow: 0 1px 8px rgba(0,0,0,0.15);
     overflow: hidden;
     width: 100%;
     border-collapse: collapse;
-}
-.funnel-table th {
-    background: #1a2e4a;
+}}
+.funnel-table th {{
+    background: {_table_head};
     color: white;
     font-size: 0.8rem;
     font-weight: 700;
@@ -122,29 +147,32 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     letter-spacing: 0.6px;
     padding: 12px 16px;
     text-align: center;
-}
-.funnel-table th:first-child { text-align: left; }
-.funnel-table td {
+}}
+.funnel-table th:first-child {{ text-align: left; }}
+.funnel-table td {{
     padding: 12px 16px;
     text-align: center;
     font-size: 0.92rem;
-    border-bottom: 1px solid #f0f4f8;
-}
-.funnel-table td:first-child {
+    border-bottom: 1px solid {_border};
+    color: {_text};
+    background: {_card_bg};
+}}
+.funnel-table td:first-child {{
     text-align: left;
     font-weight: 700;
-    color: #1a2e4a;
+    color: {_text};
     font-size: 0.9rem;
-}
-.funnel-table tr:last-child td { border-bottom: none; }
-.funnel-table tr:nth-child(even) td { background: #fafcff; }
-.funnel-table tr:hover td { background: #eef4fb; }
+}}
+.funnel-table tr:last-child td {{ border-bottom: none; }}
+.funnel-table tr:nth-child(even) td {{ background: {_table_even}; }}
+.funnel-table tr:hover td {{ background: {_table_hov}; }}
 
-.cell-val { font-weight: 700; color: #1a2e4a; font-size: 1rem; }
-.cell-dash { color: #ccc; font-size: 1rem; }
+.cell-val {{ font-weight: 700; color: {_text}; font-size: 1rem; }}
+.cell-dash {{ color: {_text_sec}; font-size: 1rem; }}
+.section-title {{ color: {_text}; border-bottom-color: {_border}; }}
 
 /* Stage badges */
-.stage-badge {
+.stage-badge {{
     display: inline-block;
     padding: 4px 10px;
     border-radius: 20px;
@@ -152,10 +180,10 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     font-weight: 700;
     color: white;
     margin-right: 8px;
-}
+}}
 
 /* Refresh button */
-div[data-testid="stButton"] > button {
+div[data-testid="stButton"] > button {{
     background: linear-gradient(135deg, #1a2e4a 0%, #2E75B6 100%);
     color: white !important;
     border: none;
@@ -165,34 +193,34 @@ div[data-testid="stButton"] > button {
     font-weight: 700;
     transition: opacity 0.2s;
     box-shadow: 0 3px 10px rgba(26,46,74,0.25);
-}
-div[data-testid="stButton"] > button:hover { opacity: 0.85; }
+}}
+div[data-testid="stButton"] > button:hover {{ opacity: 0.85; }}
 
 /* Download button */
-div[data-testid="stDownloadButton"] > button {
-    background: white;
-    color: #1a2e4a !important;
-    border: 2px solid #1a2e4a !important;
+div[data-testid="stDownloadButton"] > button {{
+    background: {_card_bg};
+    color: {_text} !important;
+    border: 2px solid {_text} !important;
     border-radius: 8px;
     font-weight: 700;
-}
+}}
 
 /* Selectbox */
-div[data-baseweb="select"] > div {
+div[data-baseweb="select"] > div {{
     border-radius: 8px !important;
-    border-color: #d0dce8 !important;
-    background: white !important;
-}
+    border-color: {_input_bdr} !important;
+    background: {_input_bg} !important;
+}}
 
 /* Section title */
-.section-title {
+.section-title {{
     font-size: 1rem;
     font-weight: 700;
-    color: #1a2e4a;
+    color: {_text};
     margin-bottom: 12px;
     padding-bottom: 6px;
-    border-bottom: 2px solid #e8f0f8;
-}
+    border-bottom: 2px solid {_border};
+}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -248,22 +276,17 @@ st.markdown("""
 # ── Filter bar ────────────────────────────────────────────────────────────────
 top_n = 11
 
-col_f1, col_f3, col_f4 = st.columns([3, 1, 1])
+col_f1, col_f3 = st.columns([3, 1])
 
 with col_f1:
     selected = st.selectbox("Sub Sub Region", list(REGIONS.keys()), label_visibility="visible")
 
 with col_f3:
     st.markdown("<br>", unsafe_allow_html=True)
-    refresh = st.button("🔄  Refresh from Tableau")
+    refresh = st.button("🔄  Refresh from Tableau") if is_admin else False
 
-with col_f4:
-    cfg = REGIONS[selected]
-    img_path = OUTPUT / cfg["img"]
-    if img_path.exists():
-        st.markdown("<br>", unsafe_allow_html=True)
-        with open(img_path, "rb") as f:
-            st.download_button("⬇️  Download PNG", f, file_name=cfg["img"], mime="image/png")
+cfg = REGIONS[selected]
+img_path = OUTPUT / cfg["img"]
 
 # ── Refresh ───────────────────────────────────────────────────────────────────
 if refresh:
@@ -295,7 +318,7 @@ sort_col = get_col(df, "Provisioned") or (df.columns[1] if len(df.columns) > 1 e
 df = df.sort_values(sort_col, ascending=False).head(top_n)
 partners = df["Partner"].tolist()
 
-# ── KPI cards ─────────────────────────────────────────────────────────────────
+# ── KPI data (pre-calculados, se muestran dentro de cada tab) ─────────────────
 prov_col  = get_col(df, "Provisioned")
 activ_col = get_col(df, "Activated")
 used_col  = get_col(df, "Used")
@@ -306,35 +329,37 @@ activ = int(df[activ_col].sum()) if activ_col else 0
 used  = int(df[used_col].sum())  if used_col  else 0
 cons  = int(df[cons_col].sum())  if cons_col  else 0
 
-kpi_cols = st.columns(5)
-kpis = [
-    ("Partners",     len(partners),  "#1a2e4a"),
-    ("Provisioned",  prov,           "#4472C4"),
-    ("Agent in Prod",activ,          "#375623"),
-    ("Used",         used,           "#808080"),
-    ("Consumed 50+", cons,           "#9C7A00"),
-]
-for col, (label, val, color) in zip(kpi_cols, kpis):
-    top_tag = "<div style='font-size:0.7rem;font-weight:700;color:#8899aa;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:2px'>Top</div>" if label == "Partners" else ""
-    html = (
-        f"<div class='kpi-card' style='--kpi-color:{color}'>"
-        + top_tag
-        + f"<div class='kpi-value'>{val:,}</div>"
-        + f"<div class='kpi-label'>{label}</div>"
-        + "</div>"
-    )
-    col.markdown(html, unsafe_allow_html=True)
-
-st.markdown("<br>", unsafe_allow_html=True)
+def render_kpis(kpis):
+    kpi_cols = st.columns(len(kpis))
+    for col, (label, val, color, is_top) in zip(kpi_cols, kpis):
+        top_tag = "<div style='font-size:0.7rem;font-weight:700;color:#8899aa;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:2px'>Top</div>" if is_top else ""
+        html = (
+            f"<div class='kpi-card' style='--kpi-color:{color}'>"
+            + top_tag
+            + f"<div class='kpi-value'>{val:,}</div>"
+            + f"<div class='kpi-label'>{label}</div>"
+            + "</div>"
+        )
+        col.markdown(html, unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
 
 # ── Tabla interactiva ─────────────────────────────────────────────────────────
-AGENT1_OUTPUT = Path("/Users/skbal/claude/tableau_agent/outputs")
+AGENT1_OUTPUT = BASE / "output"
 AGENT1_SCRIPT = Path("/Users/skbal/claude/tableau_agent/agent.py")
 
-tab1, tab2, tab3 = st.tabs(["📊  Funnel Table", "🖼️  Funnel Chart", "🌎  LACA Overview"])
+tab1, tab3 = st.tabs(["📊  Funnel Table", "🌎  LACA Overview"])
 
 with tab1:
     st.markdown('<div class="section-title">Funnel by Implementation Partner</div>', unsafe_allow_html=True)
+
+    # KPIs del Funnel Table
+    render_kpis([
+        ("Partners",      len(partners), "#1a2e4a", True),
+        ("Provisioned",   prov,          "#4472C4", False),
+        ("Agent in Prod", activ,         "#375623", False),
+        ("Used",          used,          "#808080", False),
+        ("Consumed 50+",  cons,          "#9C7A00", False),
+    ])
 
     # Construir tabla
     short_names = []
@@ -355,7 +380,6 @@ with tab1:
     scale_counts = {}
     try:
         import json
-        from playwright.sync_api import sync_playwright
         scale_csv = OUTPUT / "scale_clients.csv"
         if scale_csv.exists():
             sdf = pd.read_csv(scale_csv, encoding="utf-8", on_bad_lines='skip')
@@ -409,35 +433,69 @@ with tab1:
         st.markdown(f"<br><span style='font-size:0.72rem;color:#aaa'>Last updated: {mtime.strftime('%Y-%m-%d %H:%M')}</span>",
                     unsafe_allow_html=True)
 
-with tab2:
+    # ── Funnel Chart debajo de la tabla ──────────────────────────────────────
     if img_path.exists():
-        st.image(str(img_path), use_container_width=True)
-    else:
-        st.info("No chart yet. Click **Refresh from Tableau**.")
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown('<div class="section-title">Funnel Chart</div>', unsafe_allow_html=True)
+        col_chart, col_dl_chart = st.columns([5, 1])
+        with col_chart:
+            st.image(str(img_path), use_container_width=True)
+        with col_dl_chart:
+            st.markdown("<br><br><br>", unsafe_allow_html=True)
+            with open(img_path, "rb") as f:
+                st.download_button("⬇️  Download PNG", f, file_name=cfg["img"], mime="image/png", key="dl_funnel_chart")
 
 with tab3:
     st.markdown('<div class="section-title">LACA Agentforce Funnel — All Accounts (excl. ESMB)</div>', unsafe_allow_html=True)
 
-    laca_json = AGENT1_OUTPUT / "latest.json"
+    # KPIs LACA Overview — leer totales del CSV
+    _laca_kpi_csv = AGENT1_OUTPUT / "laca_raw_data.csv"
+    if _laca_kpi_csv.exists():
+        try:
+            from funnel_builder import load_csv as _lkc, compute_metrics as _lkm, compute_scale_metrics as _lksm
+            _lrows    = _lkc(_laca_kpi_csv)
+            _lmetrics = _lkm(_lrows)
+            _lp = _lmetrics.get("Provisioned",  {}).get("LATAM", 0)
+            _la = _lmetrics.get("Agent in Prod", {}).get("LATAM", 0)
+            _lu = _lmetrics.get("Used",          {}).get("LATAM", 0)
+            _lc = _lmetrics.get("Consumed",      {}).get("LATAM", 0)
+            # Scale
+            _ls = 0
+            _lscale_csv = AGENT1_OUTPUT / "laca_scale_accounts.csv"
+            if _lscale_csv.exists():
+                _lsdf = pd.read_csv(_lscale_csv, encoding="utf-8", on_bad_lines="skip")
+                _lid_col = next((c for c in _lsdf.columns if "ACCT_ID_18" in c.upper()), None)
+                if _lid_col:
+                    _lscale_ids = _lsdf[_lid_col].dropna().tolist()
+                    _ls = _lksm(_lrows, _lscale_ids).get("LATAM", 0)
+            render_kpis([
+                ("Provisioned",   _lp, "#4472C4", False),
+                ("Agent in Prod", _la, "#375623", False),
+                ("Used",          _lu, "#808080", False),
+                ("Consumed 50+",  _lc, "#9C7A00", False),
+                ("Scale",         _ls, "#C0504D", False),
+            ])
+        except Exception:
+            pass
+
+    laca_json = AGENT1_OUTPUT / "laca_latest.json"
 
     col_a1, col_a2 = st.columns([1, 5])
     with col_a1:
-        refresh_laca = st.button("🔄  Refresh LACA")
+        refresh_laca = st.button("🔄  Refresh LACA") if is_admin else False
 
     with col_a2:
-        if laca_json.exists():
-            import json as _json
-            with open(laca_json) as f:
-                meta = _json.load(f)
-            updated = meta.get("updated_at", "")[:16].replace("T", " ")
-            st.markdown(f"<span style='font-size:0.78rem;color:#aaa'>Last updated: {updated}</span>", unsafe_allow_html=True)
+        laca_csv = AGENT1_OUTPUT / "laca_raw_data.csv"
+        if laca_csv.exists():
+            mtime_laca = datetime.fromtimestamp(laca_csv.stat().st_mtime)
+            st.markdown(f"<span style='font-size:0.78rem;color:#aaa'>Last updated: {mtime_laca.strftime('%Y-%m-%d %H:%M')}</span>", unsafe_allow_html=True)
 
     if refresh_laca:
         with st.spinner("Regenerating LACA funnel..."):
             csv_candidates = [
-                AGENT1_OUTPUT / "raw_data.csv",
-                AGENT1_OUTPUT / "impl_summary_latam.csv",
-                AGENT1_OUTPUT / "impl_summary.csv",
+                AGENT1_OUTPUT / "laca_raw_data.csv",
+                AGENT1_OUTPUT / "laca_raw_data.csv",
+                AGENT1_OUTPUT / "laca_raw_data.csv",
             ]
             csv_found = next((str(p) for p in csv_candidates if p.exists()), None)
             if csv_found:
@@ -463,9 +521,9 @@ with tab3:
     _sys.path.insert(0, str(AGENT1_OUTPUT.parent))
 
     _csv_candidates = [
-        AGENT1_OUTPUT / "raw_data.csv",
-        AGENT1_OUTPUT / "impl_summary_latam.csv",
-        AGENT1_OUTPUT / "impl_summary.csv",
+        AGENT1_OUTPUT / "laca_raw_data.csv",
+        AGENT1_OUTPUT / "laca_raw_data.csv",
+        AGENT1_OUTPUT / "laca_raw_data.csv",
     ]
     _csv_path = next((p for p in _csv_candidates if p.exists()), None)
 
@@ -477,7 +535,7 @@ with tab3:
             _metrics = _compute_metrics(_rows)
 
             # Load scale IDs if available
-            _scale_csv = AGENT1_OUTPUT / "scale_accounts.csv"
+            _scale_csv = AGENT1_OUTPUT / "laca_scale_accounts.csv"
             _scale_ids = []
             if _scale_csv.exists():
                 _sdf = pd.read_csv(_scale_csv, encoding="utf-8", on_bad_lines="skip")
@@ -554,3 +612,78 @@ with tab3:
             st.error(f"Error loading LACA data: {e}")
     else:
         st.info("No LACA data yet. Click **Refresh LACA**.")
+
+    # ── Scale Accounts ────────────────────────────────────────────────────
+    _scale_tbl_csv = AGENT1_OUTPUT / "laca_scale_accounts.csv"
+    if _scale_tbl_csv.exists():
+        try:
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown('<div class="section-title">⚡ Scale Accounts — 100K+ Actions/Week</div>', unsafe_allow_html=True)
+            _sdf = pd.read_csv(_scale_tbl_csv, encoding="utf-8", on_bad_lines="skip")
+            _sdf = _sdf[_sdf["OU"].str.contains("LATAM", na=False)].copy()
+            # Cruzar con scale_clients.csv para traer el partner real
+            _sc_csv = AGENT1_OUTPUT / "scale_clients.csv"
+            if _sc_csv.exists():
+                _sc = pd.read_csv(_sc_csv, encoding="utf-8", on_bad_lines="skip")
+                _sc = _sc.rename(columns={"Unnamed: 12": "Impl Partner"})
+                _sc_p = _sc[["ACCT_ID_18","Impl Partner"]].dropna(subset=["Impl Partner"])
+                _sdf = _sdf.merge(_sc_p, on="ACCT_ID_18", how="left")
+            else:
+                _sdf["Impl Partner"] = _sdf.get("Unnamed: 12", pd.Series(dtype=str))
+            # Limpiar nombre del partner
+            def _clean_partner(p):
+                if pd.isna(p): return "Direct"
+                return str(p).replace(" TECNOLOGIA LTDA dba EVERYMIND","").replace(" TECNOLOGIA LTDA","").replace(" LLC","").replace(" LTDA","").strip()
+            _sdf["Impl Partner"] = _sdf["Impl Partner"].apply(_clean_partner)
+
+            def _region(ou2):
+                ou2 = str(ou2)
+                if "- BR -" in ou2 or "PS - BR" in ou2: return "🇧🇷 Brazil"
+                if "- MX -" in ou2: return "🇲🇽 Mexico"
+                if "- GRW -" in ou2: return "📈 Growth"
+                if "- EMG -" in ou2 or "EMERG" in ou2: return "🌱 Emerging"
+                return "🌎 LATAM"
+
+            _sdf["Region"] = _sdf["OU+2"].apply(_region)
+
+            def _fmt_awu(v):
+                try:
+                    n = int(str(v).replace(",",""))
+                    if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
+                    if n >= 1_000: return f"{n/1_000:.0f}K"
+                    return str(n)
+                except: return str(v)
+
+            _sdf["AWUs"] = _sdf["Agent AWUs - Week Ending May 9"].apply(_fmt_awu)
+            _sdf = _sdf.sort_values("Agent AWUs - Week Ending May 9",
+                key=lambda x: x.apply(lambda v: int(str(v).replace(",","")) if str(v).replace(",","").isdigit() else 0),
+                ascending=False)
+
+            _scale_hdr = "<table class='funnel-table'><thead><tr><th>Account</th><th>Region</th><th>Impl Partner</th><th>AWUs</th></tr></thead><tbody>"
+            _scale_rows = ""
+            for _, row in _sdf.iterrows():
+                partner = row["Impl Partner"]
+                partner_html = f"<span style='color:#C0504D;font-weight:700'>{partner}</span>" if partner != "Direct" else "<span style='color:#aaa'>Direct</span>"
+                _scale_rows += (
+                    f"<tr>"
+                    f"<td style='text-align:left;font-weight:600'>{row['Account Name']}</td>"
+                    f"<td>{row['Region']}</td>"
+                    f"<td>{partner_html}</td>"
+                    f"<td><span style='color:#C0504D;font-weight:700'>{row['AWUs']}</span></td>"
+                    f"</tr>"
+                )
+            st.markdown(_scale_hdr + _scale_rows + "</tbody></table>", unsafe_allow_html=True)
+        except Exception as e:
+            st.error(f"Error loading scale accounts: {e}")
+
+    # ── Funnel Chart image ─────────────────────────────────────────────────
+    laca_img = OUTPUT / "laca_funnel.png"
+    if laca_img.exists():
+        st.markdown("<br>", unsafe_allow_html=True)
+        col_img, col_dl = st.columns([5, 1])
+        with col_img:
+            st.image(str(laca_img), use_container_width=True)
+        with col_dl:
+            st.markdown("<br><br><br>", unsafe_allow_html=True)
+            with open(laca_img, "rb") as f:
+                st.download_button("⬇️  Download PNG", f, file_name="laca_funnel.png", mime="image/png", key="dl_laca_overview")
