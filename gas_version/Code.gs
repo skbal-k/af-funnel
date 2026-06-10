@@ -134,7 +134,6 @@ function getScaleAccounts() {
       var awuRaw = String(row[3] || "0").replace(/,/g,"");
       var awu    = parseInt(awuRaw) || 0;
       if (ou.indexOf("LATAM") < 0) continue;
-      if (awu < 100000) continue;
       var partner = String(row[12] || "").trim();
       partner = partner.replace(/ TECNOLOGIA LTDA dba EVERYMIND/gi,"")
                        .replace(/ TECNOLOGIA LTDA/gi,"").replace(/ LLC/gi,"")
