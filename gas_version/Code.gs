@@ -64,15 +64,20 @@ function getFunnelData(regionName) {
     partners.sort(function(a, b) { return b["Provisioned"] - a["Provisioned"]; });
     partners = partners.slice(0, 11);
 
-    // Scale desde SCALE_ACCOUNTS sheet
+    // Scale desde Scale Clients sheet
     var scaleByPartner = {};
     try {
-      var scaleSheet = ss.getSheetByName("SCALE_ACCOUNTS");
+      var scaleSheet = ss.getSheetByName("Scale Clients");
       if (scaleSheet) {
         var scaleData = scaleSheet.getDataRange().getValues();
         for (var sr = 1; sr < scaleData.length; sr++) {
-          var p = String(scaleData[sr][2] || "").trim(); // Impl Partner = col 3
-          if (p && p !== "Direct") scaleByPartner[p.toUpperCase()] = (scaleByPartner[p.toUpperCase()] || 0) + 1;
+          var ou  = String(scaleData[sr][6] || "").toUpperCase(); // OU = col G
+          var p   = String(scaleData[sr][12] || "").trim();       // Impl Partner = col M
+          if (!ou.includes("LATAM")) continue;
+          if (!p || p.toLowerCase() === "no partner") continue;
+          p = p.replace(/ TECNOLOGIA LTDA dba EVERYMIND/gi,"").replace(/ TECNOLOGIA LTDA/gi,"")
+               .replace(/ LLC/gi,"").replace(/ LTDA/gi,"").trim();
+          scaleByPartner[p.toUpperCase()] = (scaleByPartner[p.toUpperCase()] || 0) + 1;
         }
       }
     } catch(e) {}
