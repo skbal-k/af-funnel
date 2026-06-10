@@ -122,17 +122,38 @@ function getLacaOverviewData() {
 function getScaleAccounts() {
   try {
     var ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
-    var sheet = ss.getSheetByName("SCALE_ACCOUNTS");
+    var sheet = ss.getSheetByName("Scale Clients");
     if (!sheet) return { accounts: [] };
-    var data    = sheet.getDataRange().getValues();
+    var data = sheet.getDataRange().getValues();
     if (data.length < 2) return { accounts: [] };
-    var headers  = data[0];
     var accounts = [];
     for (var r = 1; r < data.length; r++) {
-      var row = {};
-      for (var c = 0; c < headers.length; c++) row[String(headers[c])] = data[r][c];
-      accounts.push(row);
+      var row    = data[r];
+      var ou     = String(row[6] || "").toUpperCase();  // OU col
+      var ou2    = String(row[8] || "");                // OU+2 col
+      var awuRaw = String(row[3] || "0").replace(/,/g,"");
+      var awu    = parseInt(awuRaw) || 0;
+      if (ou.indexOf("LATAM") < 0) continue;
+      if (awu < 100000) continue;
+      var partner = String(row[12] || "").trim();
+      partner = partner.replace(/ TECNOLOGIA LTDA dba EVERYMIND/gi,"")
+                       .replace(/ TECNOLOGIA LTDA/gi,"").replace(/ LLC/gi,"")
+                       .replace(/ LTDA/gi,"").trim();
+      if (!partner) partner = "Direct";
+      var region = "LATAM";
+      if (ou2.indexOf("- BR -") >= 0 || ou2.indexOf("PS - BR") >= 0) region = "🇧🇷 Brazil";
+      else if (ou2.indexOf("- MX -") >= 0) region = "🇲🇽 Mexico";
+      else if (ou2.indexOf("- GRW -") >= 0) region = "📈 Growth";
+      else if (ou2.indexOf("- EMG") >= 0)   region = "🌱 Emerging";
+      else region = "🌎 LATAM";
+      accounts.push({
+        "Account":      String(row[1] || ""),
+        "Region":       region,
+        "Impl Partner": partner,
+        "AWUs":         awu
+      });
     }
+    accounts.sort(function(a,b){ return b.AWUs - a.AWUs; });
     return { accounts: accounts };
   } catch(e) {
     return { error: e.message };
