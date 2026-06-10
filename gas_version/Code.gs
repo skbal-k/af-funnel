@@ -1,11 +1,11 @@
-var GITHUB_RAW = "https://raw.githubusercontent.com/skbal-k/af-funnel/main/output/";
+var SPREADSHEET_ID = "1M5hPXCwHphDVUF7sMTnrUAUT0h8lxDppB4YlYUmPXQs";
 
 var REGIONS = {
-  "🌎  LACA (All)":      { csvFile: "gas_laca.csv"            },
-  "🇧🇷  Brazil":         { csvFile: "gas_brazil.csv"          },
-  "🇲🇽  Mexico":         { csvFile: "gas_mexico.csv"          },
-  "📈  LATAM-Growth":   { csvFile: "gas_latam_growth.csv"    },
-  "🌱  LATAM-Emerging": { csvFile: "gas_latam_emerging.csv"  }
+  "🌎  LACA (All)":      { sheetTab: "LACA",           scaleFilter: "LATAM"  },
+  "🇧🇷  Brazil":         { sheetTab: "BRAZIL",          scaleFilter: "BRAZIL" },
+  "🇲🇽  Mexico":         { sheetTab: "MEXICO",          scaleFilter: "MEXICO" },
+  "📈  LATAM-Growth":   { sheetTab: "LATAM-GROWTH",    scaleFilter: "GROWTH" },
+  "🌱  LATAM-Emerging": { sheetTab: "LATAM-EMERGING",  scaleFilter: "EMERG"  }
 };
 
 var STAGES = ["Provisioned", "Discovery", "Agent Created", "Agent in Prod", "Used", "Consumed 50+", "Scale"];
@@ -18,60 +18,73 @@ function doGet(e) {
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
-// ── Fetch CSV from GitHub ──────────────────────────────────────────────────
-function fetchCsv(filename) {
-  var url = GITHUB_RAW + filename + "?t=" + new Date().getTime();
-  var resp = UrlFetchApp.fetch(url, {muteHttpExceptions: true});
-  if (resp.getResponseCode() !== 200) throw new Error("No se pudo cargar " + filename + " (HTTP " + resp.getResponseCode() + ")");
-  return resp.getContentText("UTF-8");
-}
-
-function parseCsv(text) {
-  var lines = text.trim().split("\n");
-  if (lines.length < 2) return [];
-  var headers = lines[0].split(",").map(function(h){ return h.trim().replace(/^"|"$/g,""); });
-  var rows = [];
-  for (var i = 1; i < lines.length; i++) {
-    var vals = lines[i].split(",").map(function(v){ return v.trim().replace(/^"|"$/g,""); });
-    var row = {};
-    for (var j = 0; j < headers.length; j++) row[headers[j]] = vals[j] || "";
-    rows.push(row);
-  }
-  return rows;
-}
-
 // ── Funnel Table ───────────────────────────────────────────────────────────
 function getFunnelData(regionName) {
   var cfg = REGIONS[regionName];
   if (!cfg) return { error: "Región no encontrada: " + regionName };
   try {
-    var csv  = fetchCsv(cfg.csvFile);
-    var rows = parseCsv(csv);
-    if (!rows.length) return { error: "Sin datos para " + regionName };
+    var ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = ss.getSheetByName(cfg.sheetTab);
+    if (!sheet) return { error: "No hay datos para '" + regionName + "'. Importá el CSV al Sheet primero." };
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
 
-    // Calcular Scale desde scale accounts
+    var stageMap = {
+      "Provisioned":   ["provisioned"],
+      "Discovery":     ["discovery"],
+      "Agent Created": ["agent created", "created"],
+      "Agent in Prod": ["agent in prod", "activated"],
+      "Used":          ["used"],
+      "Consumed 50+":  ["consumed 50+", "consumed"],
+    };
+    var colIdx = {};
+    for (var s in stageMap) {
+      colIdx[s] = -1;
+      for (var h = 0; h < headers.length; h++) {
+        var hLower = String(headers[h]).toLowerCase().trim();
+        for (var k = 0; k < stageMap[s].length; k++) {
+          if (hLower.indexOf(stageMap[s][k]) >= 0) { colIdx[s] = h; break; }
+        }
+        if (colIdx[s] >= 0) break;
+      }
+    }
+
+    var partners = [];
+    for (var r = 1; r < data.length; r++) {
+      var row     = data[r];
+      var partner = String(row[0] || "").trim();
+      if (!partner || partner.toLowerCase() === "no partner" || partner.toLowerCase() === "total") continue;
+      var entry = { name: partner };
+      for (var st in colIdx) {
+        var ci    = colIdx[st];
+        entry[st] = (ci >= 0) ? (parseInt(row[ci]) || 0) : 0;
+      }
+      partners.push(entry);
+    }
+    partners.sort(function(a, b) { return b["Provisioned"] - a["Provisioned"]; });
+    partners = partners.slice(0, 11);
+
+    // Scale desde SCALE_ACCOUNTS sheet
     var scaleByPartner = {};
     try {
-      var scaleCsv  = fetchCsv("gas_scale_accounts.csv");
-      var scaleRows = parseCsv(scaleCsv);
-      for (var s = 0; s < scaleRows.length; s++) {
-        var p = (scaleRows[s]["Impl Partner"] || "").trim();
-        if (p && p !== "Direct") scaleByPartner[p.toUpperCase()] = (scaleByPartner[p.toUpperCase()] || 0) + 1;
+      var scaleSheet = ss.getSheetByName("SCALE_ACCOUNTS");
+      if (scaleSheet) {
+        var scaleData = scaleSheet.getDataRange().getValues();
+        for (var sr = 1; sr < scaleData.length; sr++) {
+          var p = String(scaleData[sr][2] || "").trim(); // Impl Partner = col 3
+          if (p && p !== "Direct") scaleByPartner[p.toUpperCase()] = (scaleByPartner[p.toUpperCase()] || 0) + 1;
+        }
       }
     } catch(e) {}
 
-    var partners = rows.slice(0, 11).map(function(row) {
-      var entry = { name: row["Partner"] || "" };
-      STAGES.forEach(function(st) { entry[st] = parseInt(row[st]) || 0; });
-      // Buscar scale por nombre
-      var pUp = entry.name.toUpperCase();
+    for (var p = 0; p < partners.length; p++) {
+      var pUp = partners[p].name.toUpperCase();
       var scaleVal = 0;
       for (var k in scaleByPartner) {
         if (pUp.indexOf(k) >= 0 || k.indexOf(pUp) >= 0) { scaleVal = scaleByPartner[k]; break; }
       }
-      entry["Scale"] = scaleVal;
-      return entry;
-    });
+      partners[p]["Scale"] = scaleVal;
+    }
 
     return { partners: partners, stages: STAGES, region: regionName };
   } catch(e) {
@@ -82,9 +95,18 @@ function getFunnelData(regionName) {
 // ── LACA Overview ──────────────────────────────────────────────────────────
 function getLacaOverviewData() {
   try {
-    var csv  = fetchCsv("gas_laca_overview.csv");
-    var rows = parseCsv(csv);
-    if (!rows.length) return { error: "Sin datos de LACA Overview. Corré el update script primero." };
+    var ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = ss.getSheetByName("LACA_OVERVIEW");
+    if (!sheet) return { error: "No hay datos de LACA Overview. Importá el CSV al Sheet primero." };
+    var data    = sheet.getDataRange().getValues();
+    if (data.length < 2) return { error: "Sheet LACA_OVERVIEW está vacía." };
+    var headers = data[0];
+    var rows    = [];
+    for (var r = 1; r < data.length; r++) {
+      var row = {};
+      for (var c = 0; c < headers.length; c++) row[String(headers[c])] = data[r][c];
+      rows.push(row);
+    }
     return { rows: rows };
   } catch(e) {
     return { error: e.message };
@@ -94,23 +116,21 @@ function getLacaOverviewData() {
 // ── Scale Accounts ─────────────────────────────────────────────────────────
 function getScaleAccounts() {
   try {
-    var csv      = fetchCsv("gas_scale_accounts.csv");
-    var accounts = parseCsv(csv);
+    var ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = ss.getSheetByName("SCALE_ACCOUNTS");
+    if (!sheet) return { accounts: [] };
+    var data    = sheet.getDataRange().getValues();
+    if (data.length < 2) return { accounts: [] };
+    var headers  = data[0];
+    var accounts = [];
+    for (var r = 1; r < data.length; r++) {
+      var row = {};
+      for (var c = 0; c < headers.length; c++) row[String(headers[c])] = data[r][c];
+      accounts.push(row);
+    }
     return { accounts: accounts };
   } catch(e) {
     return { error: e.message };
-  }
-}
-
-// ── Metadata (last updated) ────────────────────────────────────────────────
-function getMetadata() {
-  try {
-    var url  = GITHUB_RAW + "gas_metadata.json?t=" + new Date().getTime();
-    var resp = UrlFetchApp.fetch(url, {muteHttpExceptions: true});
-    if (resp.getResponseCode() === 200) return JSON.parse(resp.getContentText());
-    return {};
-  } catch(e) {
-    return {};
   }
 }
 
