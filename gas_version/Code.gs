@@ -1,11 +1,11 @@
 var SPREADSHEET_ID = "1CH8lMnVTLVQGxRo7BEIJhinTvOTH5GUMwlsbBFm085w";
 
 var REGIONS = {
-  "🌎  LACA (All)":      { sheetTab: "LACA",           scaleFilter: "LATAM"  },
-  "🇧🇷  Brazil":         { sheetTab: "BRAZIL",          scaleFilter: "BRAZIL" },
-  "🇲🇽  Mexico":         { sheetTab: "MEXICO",          scaleFilter: "MEXICO" },
-  "📈  LATAM-Growth":   { sheetTab: "GRW",   scaleFilter: "GROWTH" },
-  "🌱  LATAM-Emerging": { sheetTab: "EMG",   scaleFilter: "EMERG"  }
+  "🌎  LACA (All)":      { sheetTab: "LACA",    scaleFilter: "LATAM"  },
+  "🇧🇷  Brazil":         { sheetTab: "BRAZIL",  scaleFilter: "BRAZIL" },
+  "🇲🇽  Mexico":         { sheetTab: "MEXICO",  scaleFilter: "MEXICO" },
+  "📈  LATAM-Growth":   { sheetTab: "GRW",     scaleFilter: "GROWTH" },
+  "🌱  LATAM-Emerging": { sheetTab: "EMG",     scaleFilter: "EMERG"  }
 };
 
 var STAGES = ["Provisioned", "Discovery", "Agent Created", "Agent in Prod", "Used", "Consumed 50+", "Scale"];
@@ -18,7 +18,32 @@ function doGet(e) {
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
-// ── Funnel Table ───────────────────────────────────────────────────────────
+function doPost(e) {
+  try {
+    var payload = JSON.parse(e.postData.contents);
+    if (payload.action !== "syncData") {
+      return ContentService.createTextOutput(JSON.stringify({ok: false, msg: "Acción desconocida"}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var data = payload.data;
+    var updated = [];
+    for (var tabName in data) {
+      var rows = data[tabName];
+      var sheet = ss.getSheetByName(tabName);
+      if (!sheet) sheet = ss.insertSheet(tabName);
+      sheet.clearContents();
+      if (rows.length > 0) sheet.getRange(1, 1, rows.length, rows[0].length).setValues(rows);
+      updated.push(tabName);
+    }
+    return ContentService.createTextOutput(JSON.stringify({ok: true, msg: "Tabs actualizadas: " + updated.join(", ")}))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch(e) {
+    return ContentService.createTextOutput(JSON.stringify({ok: false, msg: e.message}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
 function getFunnelData(regionName) {
   var cfg = REGIONS[regionName];
   if (!cfg) return { error: "Región no encontrada: " + regionName };
@@ -64,15 +89,15 @@ function getFunnelData(regionName) {
     partners.sort(function(a, b) { return b["Provisioned"] - a["Provisioned"]; });
     partners = partners.slice(0, 11);
 
-    // Scale desde Scale Clients sheet
+    // Scale desde Scale Clients
     var scaleByPartner = {};
     try {
       var scaleSheet = ss.getSheetByName("Scale Clients");
       if (scaleSheet) {
         var scaleData = scaleSheet.getDataRange().getValues();
         for (var sr = 1; sr < scaleData.length; sr++) {
-          var ou  = String(scaleData[sr][6] || "").toUpperCase(); // OU = col G
-          var p   = String(scaleData[sr][12] || "").trim();       // Impl Partner = col M
+          var ou = String(scaleData[sr][6] || "").toUpperCase();
+          var p  = String(scaleData[sr][12] || "").trim();
           if (!ou.includes("LATAM")) continue;
           if (!p || p.toLowerCase() === "no partner") continue;
           p = p.replace(/ TECNOLOGIA LTDA dba EVERYMIND/gi,"").replace(/ TECNOLOGIA LTDA/gi,"")
@@ -97,7 +122,6 @@ function getFunnelData(regionName) {
   }
 }
 
-// ── LACA Overview ──────────────────────────────────────────────────────────
 function getLacaOverviewData() {
   try {
     var ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -118,37 +142,29 @@ function getLacaOverviewData() {
   }
 }
 
-// ── Scale Accounts ─────────────────────────────────────────────────────────
 function getScaleAccounts() {
   try {
     var ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
     var sheet = ss.getSheetByName("Scale Clients");
-    if (!sheet) return { accounts: [], debug: "Sheet 'Scale Clients' not found" };
+    if (!sheet) return { accounts: [] };
     var data = sheet.getDataRange().getValues();
-    if (data.length < 2) return { accounts: [], debug: "Sheet empty" };
+    if (data.length < 2) return { accounts: [] };
 
-    // Detectar columnas por nombre (igual que hace el agente)
+    // Detectar columnas por nombre — robusto ante cambios de orden (igual que Agent 1)
     var headers = data[0].map(function(h){ return String(h).trim().toLowerCase(); });
-    function col(keywords) {
-      for (var i = 0; i < headers.length; i++) {
-        for (var k = 0; k < keywords.length; k++) {
+    function findCol(keywords) {
+      for (var i = 0; i < headers.length; i++)
+        for (var k = 0; k < keywords.length; k++)
           if (headers[i].indexOf(keywords[k]) >= 0) return i;
-        }
-      }
       return -1;
     }
-    var iName    = col(["account name"]);
-    var iOU      = col(["\" ou\"", " ou", "ou\t"]) >= 0 ? col(["\" ou\"", " ou", "ou\t"]) : col(["ou"]);
-    var iOU2     = col(["ou+2", "ou 2"]);
-    var iAWU     = col(["awu", "agent awu", "actions"]);
-    var iPartner = col(["impl partner", "implementation partner", "partner"]);
-
-    // Fallback por índice si no encontró por nombre
-    if (iName    < 0) iName    = 1;
-    if (iOU      < 0) iOU      = 6;
-    if (iOU2     < 0) iOU2     = 8;
-    if (iAWU     < 0) iAWU     = 3;
-    if (iPartner < 0) iPartner = 12;
+    var iName    = findCol(["account name"]);                        if (iName    < 0) iName    = 1;
+    var iOU      = findCol(["\" ou\"", " ou\t", " ou,"]);
+    if (iOU < 0) { for (var i=0; i<headers.length; i++) { if (headers[i] === "ou") { iOU = i; break; } } }
+                                                                     if (iOU      < 0) iOU      = 6;
+    var iOU2     = findCol(["ou+2", "ou 2"]);                        if (iOU2     < 0) iOU2     = 8;
+    var iAWU     = findCol(["awu", "agent awu", "action"]);          if (iAWU     < 0) iAWU     = 3;
+    var iPartner = findCol(["impl partner", "implementation part"]);  if (iPartner < 0) iPartner = 12;
 
     var accounts = [];
     for (var r = 1; r < data.length; r++) {
@@ -165,7 +181,7 @@ function getScaleAccounts() {
       if (!partner) partner = "Direct";
       var region = "🌎 LATAM";
       if (ou2.indexOf("- BR -") >= 0 || ou2.indexOf("PS - BR") >= 0) region = "🇧🇷 Brazil";
-      else if (ou2.indexOf("- MX -") >= 0) region = "🇲🇽 Mexico";
+      else if (ou2.indexOf("- MX -")  >= 0) region = "🇲🇽 Mexico";
       else if (ou2.indexOf("- GRW -") >= 0) region = "📈 Growth";
       else if (ou2.indexOf("- EMG")   >= 0) region = "🌱 Emerging";
       accounts.push({
