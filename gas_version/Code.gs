@@ -123,30 +123,53 @@ function getScaleAccounts() {
   try {
     var ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
     var sheet = ss.getSheetByName("Scale Clients");
-    if (!sheet) return { accounts: [] };
+    if (!sheet) return { accounts: [], debug: "Sheet 'Scale Clients' not found" };
     var data = sheet.getDataRange().getValues();
-    if (data.length < 2) return { accounts: [] };
+    if (data.length < 2) return { accounts: [], debug: "Sheet empty" };
+
+    // Detectar columnas por nombre (igual que hace el agente)
+    var headers = data[0].map(function(h){ return String(h).trim().toLowerCase(); });
+    function col(keywords) {
+      for (var i = 0; i < headers.length; i++) {
+        for (var k = 0; k < keywords.length; k++) {
+          if (headers[i].indexOf(keywords[k]) >= 0) return i;
+        }
+      }
+      return -1;
+    }
+    var iName    = col(["account name"]);
+    var iOU      = col(["\" ou\"", " ou", "ou\t"]) >= 0 ? col(["\" ou\"", " ou", "ou\t"]) : col(["ou"]);
+    var iOU2     = col(["ou+2", "ou 2"]);
+    var iAWU     = col(["awu", "agent awu", "actions"]);
+    var iPartner = col(["impl partner", "implementation partner", "partner"]);
+
+    // Fallback por índice si no encontró por nombre
+    if (iName    < 0) iName    = 1;
+    if (iOU      < 0) iOU      = 6;
+    if (iOU2     < 0) iOU2     = 8;
+    if (iAWU     < 0) iAWU     = 3;
+    if (iPartner < 0) iPartner = 12;
+
     var accounts = [];
     for (var r = 1; r < data.length; r++) {
       var row    = data[r];
-      var ou     = String(row[6] || "").toUpperCase();  // OU col
-      var ou2    = String(row[8] || "");                // OU+2 col
-      var awuRaw = String(row[3] || "0").replace(/,/g,"");
+      var ou     = String(row[iOU]  || "").toUpperCase();
+      var ou2    = String(row[iOU2] || "");
+      var awuRaw = String(row[iAWU] || "0").replace(/,/g,"");
       var awu    = parseInt(awuRaw) || 0;
       if (ou.indexOf("LATAM") < 0) continue;
-      var partner = String(row[12] || "").trim();
+      var partner = String(row[iPartner] || "").trim();
       partner = partner.replace(/ TECNOLOGIA LTDA dba EVERYMIND/gi,"")
                        .replace(/ TECNOLOGIA LTDA/gi,"").replace(/ LLC/gi,"")
                        .replace(/ LTDA/gi,"").trim();
       if (!partner) partner = "Direct";
-      var region = "LATAM";
+      var region = "🌎 LATAM";
       if (ou2.indexOf("- BR -") >= 0 || ou2.indexOf("PS - BR") >= 0) region = "🇧🇷 Brazil";
       else if (ou2.indexOf("- MX -") >= 0) region = "🇲🇽 Mexico";
       else if (ou2.indexOf("- GRW -") >= 0) region = "📈 Growth";
-      else if (ou2.indexOf("- EMG") >= 0)   region = "🌱 Emerging";
-      else region = "🌎 LATAM";
+      else if (ou2.indexOf("- EMG")   >= 0) region = "🌱 Emerging";
       accounts.push({
-        "Account":      String(row[1] || ""),
+        "Account":      String(row[iName] || ""),
         "Region":       region,
         "Impl Partner": partner,
         "AWUs":         awu
@@ -155,7 +178,7 @@ function getScaleAccounts() {
     accounts.sort(function(a,b){ return b.AWUs - a.AWUs; });
     return { accounts: accounts };
   } catch(e) {
-    return { error: e.message };
+    return { error: e.message, accounts: [] };
   }
 }
 
