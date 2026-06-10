@@ -4,8 +4,8 @@ var REGIONS = {
   "🌎  LACA (All)":      { sheetTab: "LACA",           scaleFilter: "LATAM"  },
   "🇧🇷  Brazil":         { sheetTab: "BRAZIL",          scaleFilter: "BRAZIL" },
   "🇲🇽  Mexico":         { sheetTab: "MEXICO",          scaleFilter: "MEXICO" },
-  "📈  LATAM-Growth":   { sheetTab: "LATAM-GROWTH",    scaleFilter: "GROWTH" },
-  "🌱  LATAM-Emerging": { sheetTab: "LATAM-EMERGING",  scaleFilter: "EMERG"  }
+  "📈  LATAM-Growth":   { sheetTab: "GRW",   scaleFilter: "GROWTH" },
+  "🌱  LATAM-Emerging": { sheetTab: "EMG",   scaleFilter: "EMERG"  }
 };
 
 var STAGES = ["Provisioned", "Discovery", "Agent Created", "Agent in Prod", "Used", "Consumed 50+", "Scale"];
