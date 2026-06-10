@@ -510,7 +510,7 @@ function renderLacaOverview(rows) {
   html += "</tr></thead><tbody>";
   rows.forEach(function(row) {
     var stage = String(row["Stage"]||"");
-    var color = STAGE_COLORS[stage]||STAGE_COLORS[stage.replace(" 50+","")]||"#4472C4";
+    var color = stage==="Consumed"?"#9C7A00":stage==="Scale"?"#C0504D":(STAGE_COLORS[stage]||STAGE_COLORS[stage.replace(" 50+","")]||"#4472C4");
     html += "<tr><td><span class='stage-dot' style='background:"+color+"'></span>"+stage+"</td>";
     LACA_COLS.forEach(function(c) {
       var key=c[1], val=parseInt(row[key])||0, baseKey=PCT_BASES[key];
